@@ -8,8 +8,8 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 
 <br>
 
-[![Swift](https://img.shields.io/badge/Swift-6.0-F05138?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org)
-[![iOS](https://img.shields.io/badge/iOS-17.0+-000000?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/ios/)
+[![Swift](https://img.shields.io/badge/Swift-5.0-F05138?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org)
+[![iOS](https://img.shields.io/badge/iOS-26+-000000?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/ios/)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-007AFF?style=for-the-badge&logo=swift&logoColor=white)](https://developer.apple.com/xcode/swiftui/)
 [![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-compatible-FF6B6B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHRleHQgeT0iMTgiIGZvbnQtc2l6ZT0iMTgiPvCfpp48L3RleHQ+PC9zdmc+&logoColor=white)](https://github.com/openclaw/openclaw)
@@ -27,27 +27,19 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 
 <br>
 
-[Quick Start](#-quick-start) · [Data Sources](#-data-sources) · [OpenClaw Integration](#-porter--openclaw) · [Architecture](#%EF%B8%8F-architecture) · [Roadmap](#%EF%B8%8F-roadmap)
+[Quick Start](#-quick-start) · [Data Sources](#-data-sources) · [Why ClawAntenna?](#-why-clawantenna) · [Architecture](#%EF%B8%8F-architecture) · [Roadmap](#%EF%B8%8F-roadmap)
 
 </div>
 
 <br>
 
-## Why ClawAntenna?
+## 🦞 Why ClawAntenna?
 
-[OpenClaw](https://github.com/openclaw/openclaw) is a powerful personal AI — but it only knows what you *tell* it. **ClawAntenna bridges the gap between your physical life and your AI.** It silently collects data from your iPhone's sensors in the background, uploading everything to a Supabase Postgres database that OpenClaw can query directly.
+[OpenClaw](https://github.com/openclaw/openclaw) is the open-source personal AI assistant with 300k+ stars — it lives in your messaging apps and acts as your always-on AI. But it only knows what you *tell* it.
 
-The result: OpenClaw can answer questions about your real-world behavior — where you've been, how you move, your health metrics — without you ever having to log anything manually.
+**ClawAntenna bridges the gap between your physical life and your AI.** It silently collects sensor data from your iPhone in the background, uploading everything to a Supabase Postgres database that OpenClaw can query directly — so it can answer questions about your real-world behavior without you ever logging anything manually.
 
 > **OpenClaw knows what you say. ClawAntenna knows what you do.** Together, they know *you*.
-
----
-
-## 🦞 ClawAntenna + OpenClaw
-
-**[OpenClaw](https://github.com/openclaw/openclaw)** is the open-source personal AI assistant with 300k+ stars — it lives in your messaging apps and acts as your always-on AI. **ClawAntenna is its sensory extension.**
-
-While OpenClaw handles your digital life — messages, tasks, reminders — ClawAntenna feeds it your physical-world context. Together, they form a **complete personal AI that understands both your digital and physical life.**
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -195,7 +187,7 @@ Failed uploads are retried up to 5 times with exponential backoff tracking. Noth
 
 ### Prerequisites
 
-- **Xcode 15+** and a device running **iOS 17.0+**
+- **Xcode 26+** and a device running **iOS 26+**
 - A free [Supabase](https://supabase.com) project
 
 ### 1. Set up Supabase
@@ -301,9 +293,9 @@ Select your physical device and hit **⌘R**. (Location services require real ha
 
 ### 3. Configure & go
 
-1. Complete the permission onboarding flow
-2. Tap **⚙️** → enter your Supabase **Project URL** and **service-role key**
-3. Toggle tracking on
+1. Tap **⚙️ Settings** → enter your Supabase **Project URL** and **service-role key**
+2. Go back to the home screen and tap any collector to enable it
+3. Grant permissions when prompted
 
 **That's it. Put your phone in your pocket. ClawAntenna handles the rest.**
 
@@ -342,19 +334,30 @@ flowchart TB
 
 ```
 ClawAntenna/
-├── ClawAntennaApp.swift              # App entry, service wiring
-├── ContentView.swift            # Onboarding ↔ dashboard router
-├── Models/
-│   └── LocationRecord.swift     # SwiftData model + upload status
+├── ClawAntennaApp.swift          # App entry, service wiring
+├── ContentView.swift             # Root view
+├── Protocols/
+│   ├── DataCollector.swift       # Common collector protocol
+│   └── Uploadable.swift          # Upload contract for SwiftData models
+├── Collectors/
+│   ├── LocationCollector.swift   # GPS via CoreLocation
+│   ├── ActivityCollector.swift   # Motion activity via CoreMotion
+│   ├── PedometerCollector.swift  # Steps & distance
+│   ├── AltimeterCollector.swift  # Barometric pressure
+│   ├── BatteryCollector.swift    # Battery level & state
+│   ├── ConnectivityCollector.swift # Network type & quality
+│   └── HealthCollector.swift     # HealthKit metrics
+├── Models/                       # SwiftData models (one per collector)
 ├── Services/
-│   ├── LocationManager.swift    # CoreLocation background monitoring
-│   ├── UploadService.swift      # Batch upload to Supabase REST API
-│   ├── KeychainHelper.swift     # Secure credential storage
-│   └── AppSettings.swift        # User preferences & config
+│   ├── LocationManager.swift     # CoreLocation background monitoring
+│   ├── CollectorManager.swift    # Registry for all collectors
+│   ├── UploadService.swift       # Batch upload to Supabase REST API
+│   ├── KeychainHelper.swift      # Secure credential storage
+│   └── AppSettings.swift         # User preferences & config
 └── Views/
-    ├── DashboardView.swift      # Live tracking status & stats
-    ├── SettingsView.swift       # Supabase connection config
-    └── PermissionView.swift     # Progressive permission onboarding
+    ├── DashboardView.swift       # Collector list with status
+    ├── CollectorDetailView.swift # Per-collector detail & permissions
+    └── SettingsView.swift        # Supabase config & upload queue
 ```
 
 ---
@@ -363,7 +366,7 @@ ClawAntenna/
 
 | Phase | Focus | Description |
 |:-----:|-------|-------------|
-| **1** | 🧩 Architecture | `DataCollector` protocol, refactor location collector, generalize upload service for multi-table support |
+| **1** | ✅ Architecture | `DataCollector` protocol, modular collector system, generalized upload pipeline |
 | **2** | 🚶 Motion & Activity | Activity type detection, pedometer (steps/distance/floors), barometric altitude |
 | **3** | 📱 Device Context | Battery level & charging state, network connectivity monitoring |
 | **4** | ❤️ Health | HealthKit integration — heart rate, active energy, sleep analysis, workouts (with background delivery) |

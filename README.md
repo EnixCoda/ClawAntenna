@@ -27,7 +27,7 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 
 <br>
 
-[Quick Start](#-quick-start) · [Data Sources](#-data-sources) · [Why ClawAntenna?](#-why-clawantenna) · [Architecture](#%EF%B8%8F-architecture) · [Roadmap](#%EF%B8%8F-roadmap)
+[Quick Start](#-quick-start) · [Data Sources](#-data-sources) · [Why ClawAntenna?](#-why-clawantenna) · [How It Works](#-how-it-works) · [Architecture](#%EF%B8%8F-architecture) · [Roadmap](#%EF%B8%8F-roadmap)
 
 </div>
 
@@ -43,19 +43,19 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                     Your Personal AI Stack                   │
+│                    Your Personal AI Stack                    │
 │                                                              │
-│  ┌─────────────┐    Supabase     ┌────────────────────────┐  │
-│  │  📡 ClawAntenna  │───(Postgres)───▶│  🦞 OpenClaw           │  │
-│  │             │                 │                        │  │
-│  │  Location   │  "Where was I   │  WhatsApp · Telegram   │  │
-│  │  Motion     │   last Tuesday  │  iMessage · Slack      │  │
-│  │  Steps      │   at 3pm?"      │  Discord · Signal      │  │
-│  │  Health     │                 │  ...20+ channels       │  │
-│  │  Battery    │  ──────────▶    │                        │  │
-│  │  Network    │  Answers with   │  Skills · Memory       │  │
-│  │             │  YOUR data      │  Voice · Canvas        │  │
-│  └─────────────┘                 └────────────────────────┘  │
+│  ┌───────────────┐   Supabase    ┌────────────────────────┐  │
+│  │📡 ClawAntenna │──(Postgres)──▶│ 🦞 OpenClaw            │  │
+│  │               │               │                        │  │
+│  │  Location     │ "Where was I  │  WhatsApp · Telegram   │  │
+│  │  Motion       │  last Tuesday │  iMessage · Slack      │  │
+│  │  Steps        │  at 3pm?"     │  Discord · Signal      │  │
+│  │  Health       │               │  ...20+ channels       │  │
+│  │  Battery      │ ──────────▶   │                        │  │
+│  │  Network      │ Answers with  │  Skills · Memory       │  │
+│  │               │ YOUR data     │  Voice · Canvas        │  │
+│  └───────────────┘               └────────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -111,53 +111,6 @@ Each collector runs independently, can be toggled on/off, and uploads to its own
 **3. Sync** — The upload service batches pending records and POSTs them to your Supabase project  
 
 Records that fail to upload are retried automatically (up to 5 attempts). UUID primary keys guarantee idempotency — you'll never get duplicates.
-
----
-
-## 🔍 Query Your Life
-
-Once ClawAntenna is running, your Supabase database becomes a queryable journal of your life. Here are some things you can ask:
-
-```sql
--- Where do I spend most of my time?
-SELECT
-  round(latitude::numeric, 3) AS lat,
-  round(longitude::numeric, 3) AS lng,
-  count(*) AS visits
-FROM locations
-GROUP BY lat, lng
-ORDER BY visits DESC
-LIMIT 10;
-```
-
-```sql
--- How many km did I travel last week?
-WITH ordered AS (
-  SELECT *,
-    lag(latitude) OVER (ORDER BY recorded_at) AS prev_lat,
-    lag(longitude) OVER (ORDER BY recorded_at) AS prev_lng
-  FROM locations
-  WHERE recorded_at > now() - interval '7 days'
-)
-SELECT round(sum(
-  earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(prev_lat, prev_lng))
-) / 1000) AS km_traveled
-FROM ordered
-WHERE prev_lat IS NOT NULL;
-```
-
-```sql
--- What's my daily step count trend?
-SELECT
-  date_trunc('day', period_start) AS day,
-  sum(steps) AS total_steps
-FROM pedometer
-GROUP BY day
-ORDER BY day DESC
-LIMIT 30;
-```
-
-> 💡 Your data lives in Postgres — query it with SQL, connect Grafana, pipe into Jupyter, or let [OpenClaw](https://github.com/openclaw/openclaw) query it for you in natural language.
 
 ---
 

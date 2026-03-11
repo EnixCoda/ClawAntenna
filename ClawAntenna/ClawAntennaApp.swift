@@ -3,7 +3,7 @@ import SwiftData
 import CoreLocation
 
 @main
-struct PorterApp: App {
+struct ClawAntennaApp: App {
     let modelContainer: ModelContainer
     @State private var settings = AppSettings()
     @State private var locationManager = LocationManager()
@@ -32,7 +32,6 @@ struct PorterApp: App {
             Group {
                 if isReady, let uploadService, let collectorManager {
                     ContentView(
-                        locationManager: locationManager,
                         collectorManager: collectorManager,
                         uploadService: uploadService,
                         settings: settings
@@ -42,7 +41,7 @@ struct PorterApp: App {
                         Image(systemName: "antenna.radiowaves.left.and.right")
                             .font(.system(size: 40))
                             .foregroundStyle(.tint)
-                        Text("Porter")
+                        Text("ClawAntenna")
                             .font(.title2.bold())
                         ProgressView()
                     }
@@ -56,6 +55,9 @@ struct PorterApp: App {
                 let manager = CollectorManager(locationManager: locationManager)
                 collectorManager = manager
                 setupLocationHandler(uploadService: service)
+                locationManager.onAuthorizationChange = { [manager] in
+                    manager.location.handleAuthorizationChange()
+                }
                 // Migrate legacy tracking toggle to collector system
                 if settings.isTrackingEnabled {
                     UserDefaults.standard.set(true, forKey: "collector_location_enabled")

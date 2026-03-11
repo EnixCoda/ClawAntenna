@@ -7,7 +7,7 @@ import os
 /// their current state, and bulk operations like starting/stopping all collectors.
 @Observable
 final class CollectorManager {
-    private let logger = Logger(subsystem: "co.enix.Porter", category: "CollectorManager")
+    private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "CollectorManager")
 
     let collectors: [any DataCollector]
 

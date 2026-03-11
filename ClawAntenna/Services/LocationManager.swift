@@ -6,7 +6,7 @@ import os
 final class LocationManager {
     private var manager: CLLocationManager?
     private var delegate: LocationDelegate?
-    private let logger = Logger(subsystem: "co.enix.Porter", category: "Location")
+    private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "Location")
 
     var currentLocation: CLLocation?
     var authorizationStatus: CLAuthorizationStatus = .notDetermined
@@ -14,6 +14,7 @@ final class LocationManager {
     var lastError: String?
 
     var onLocationUpdate: ((CLLocation) -> Void)?
+    var onAuthorizationChange: (() -> Void)?
 
     /// Must be called once from the main thread after the view appears.
     func setup() {
@@ -32,6 +33,7 @@ final class LocationManager {
         del.onAuthChange = { [weak self] status in
             self?.authorizationStatus = status
             self?.logger.info("Authorization changed to: \(status.rawValue)")
+            self?.onAuthorizationChange?()
         }
 
         self.delegate = del

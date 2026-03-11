@@ -16,9 +16,37 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             List {
+                if !settings.isConfigured {
+                    Section {
+                        NavigationLink {
+                            SettingsView(
+                                uploadService: uploadService,
+                                settings: settings
+                            )
+                        } label: {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Data connection not configured")
+                                        .font(.subheadline.weight(.medium))
+                                    Text("Set up Supabase to upload collected data.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                    }
+                }
+
                 Section("Collectors") {
                     ForEach(collectorManager.collectors, id: \.id) { collector in
-                        CollectorRow(collector: collector)
+                        NavigationLink {
+                            CollectorDetailView(collector: collector)
+                        } label: {
+                            CollectorRow(collector: collector)
+                        }
                     }
                 }
 
@@ -33,7 +61,7 @@ struct DashboardView: View {
                     }
                 }
             }
-            .navigationTitle("Porter")
+            .navigationTitle("ClawAntenna")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if pendingCount > 0 {
@@ -58,80 +86,25 @@ struct DashboardView: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button {
-                            enableAll()
-                        } label: {
-                            Label("Enable All", systemImage: "bolt.fill")
-                        }
-
-                        Button(role: .destructive) {
-                            disableAll()
-                        } label: {
-                            Label("Disable All", systemImage: "bolt.slash")
-                        }
-
-                        Divider()
-
-                        NavigationLink {
-                            SettingsView(
-                                uploadService: uploadService,
-                                settings: settings
-                            )
-                        } label: {
-                            Label("Settings", systemImage: "gear")
-                        }
+                    NavigationLink {
+                        SettingsView(
+                            uploadService: uploadService,
+                            settings: settings
+                        )
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Image(systemName: "gear")
                     }
                 }
             }
         }
     }
 
-    private func enableAll() {
-        for collector in collectorManager.collectors {
-            let key = "collector_\(collector.id)_enabled"
-            UserDefaults.standard.set(true, forKey: key)
-            if collector.permissionStatus.isGranted {
-                collector.start()
-            }
-        }
-    }
 
-    private func disableAll() {
-        for collector in collectorManager.collectors {
-            let key = "collector_\(collector.id)_enabled"
-            UserDefaults.standard.set(false, forKey: key)
-            collector.stop()
-        }
-    }
 }
 
-/// A single row displaying a collector's name, status, and toggle.
+/// A single row displaying a collector's name and status.
 private struct CollectorRow: View {
     let collector: any DataCollector
-
-    private var enabledKey: String { "collector_\(collector.id)_enabled" }
-
-    private var isEnabled: Binding<Bool> {
-        Binding(
-            get: { UserDefaults.standard.bool(forKey: enabledKey) },
-            set: { newValue in
-                UserDefaults.standard.set(newValue, forKey: enabledKey)
-                if newValue {
-                    if collector.permissionStatus == .notDetermined {
-                        collector.requestPermission()
-                    }
-                    if collector.permissionStatus.isGranted {
-                        collector.start()
-                    }
-                } else {
-                    collector.stop()
-                }
-            }
-        )
-    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -155,10 +128,17 @@ private struct CollectorRow: View {
                 Image(systemName: "exclamationmark.triangle")
                     .foregroundStyle(.orange)
                     .font(.caption)
+            } else if collector.permissionStatus == .limited {
+                Image(systemName: "exclamationmark.circle")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
             }
 
-            Toggle("", isOn: isEnabled)
-                .labelsHidden()
+            if collector.isRunning {
+                Image(systemName: "circle.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.green)
+            }
         }
     }
 }

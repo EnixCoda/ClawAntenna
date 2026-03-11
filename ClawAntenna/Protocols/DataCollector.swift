@@ -5,6 +5,7 @@ enum CollectorPermissionStatus: String {
     case notRequired
     case notDetermined
     case authorized
+    case limited
     case denied
     case restricted
 
@@ -13,17 +14,18 @@ enum CollectorPermissionStatus: String {
         case .notRequired: "Not Required"
         case .notDetermined: "Not Requested"
         case .authorized: "Authorized"
+        case .limited: "Limited"
         case .denied: "Denied"
         case .restricted: "Restricted"
         }
     }
 
     var isGranted: Bool {
-        self == .authorized || self == .notRequired
+        self == .authorized || self == .notRequired || self == .limited
     }
 }
 
-/// Common interface for all data collectors in Porter.
+/// Common interface for all data collectors in ClawAntenna.
 ///
 /// Each collector is responsible for a single data source (location, motion, battery, etc.)
 /// and manages its own permission lifecycle and background collection.

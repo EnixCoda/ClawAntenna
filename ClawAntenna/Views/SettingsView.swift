@@ -105,7 +105,7 @@ struct SettingsView: View {
                 LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "–")
                 LabeledContent("Build", value: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "–")
 
-                Link(destination: URL(string: "https://github.com/EnixCoda/Porter")!) {
+                Link(destination: URL(string: "https://github.com/EnixCoda/ClawAntenna")!) {
                     HStack {
                         Label("GitHub", systemImage: "star")
                         Spacer()

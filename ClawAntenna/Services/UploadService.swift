@@ -4,7 +4,7 @@ import os
 
 @Observable
 final class UploadService {
-    private let logger = Logger(subsystem: "co.enix.Porter", category: "Upload")
+    private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "Upload")
     private let settings: AppSettings
     private let session = URLSession.shared
 

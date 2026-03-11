@@ -14,7 +14,7 @@ final class ActivityCollector: DataCollector {
     let icon = "figure.walk"
     let description = "Stationary, walking, running, cycling, driving"
 
-    private let logger = Logger(subsystem: "co.enix.Porter", category: "ActivityCollector")
+    private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "ActivityCollector")
 
     // TODO: private var activityManager: CMMotionActivityManager?
     // TODO: private var modelContext: ModelContext

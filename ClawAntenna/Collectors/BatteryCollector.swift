@@ -13,7 +13,7 @@ final class BatteryCollector: DataCollector {
     let icon = "battery.100percent"
     let description = "Battery level and charging state"
 
-    private let logger = Logger(subsystem: "co.enix.Porter", category: "BatteryCollector")
+    private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "BatteryCollector")
 
     // TODO: private var timer: Timer?
     // TODO: private var modelContext: ModelContext

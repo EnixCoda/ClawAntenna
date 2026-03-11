@@ -14,7 +14,7 @@ final class AltimeterCollector: DataCollector {
     let icon = "barometer"
     let description = "Barometric pressure, relative altitude"
 
-    private let logger = Logger(subsystem: "co.enix.Porter", category: "AltimeterCollector")
+    private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "AltimeterCollector")
 
     // TODO: private var altimeter: CMAltimeter?
     // TODO: private var modelContext: ModelContext

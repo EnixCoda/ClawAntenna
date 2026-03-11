@@ -13,10 +13,10 @@ final class ConnectivityCollector: DataCollector {
     let icon = "wifi"
     let description = "Wi-Fi, cellular, connection quality"
 
-    private let logger = Logger(subsystem: "co.enix.Porter", category: "ConnectivityCollector")
+    private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "ConnectivityCollector")
 
     // TODO: private var monitor: NWPathMonitor?
-    // TODO: private let monitorQueue = DispatchQueue(label: "co.enix.Porter.connectivity")
+    // TODO: private let monitorQueue = DispatchQueue(label: "co.enix.ClawAntenna.connectivity")
     // TODO: private var modelContext: ModelContext
 
     private(set) var isRunning = false

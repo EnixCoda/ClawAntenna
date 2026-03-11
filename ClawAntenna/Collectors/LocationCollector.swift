@@ -11,7 +11,7 @@ final class LocationCollector: DataCollector {
     let description = "GPS coordinates, altitude, speed, accuracy"
 
     private let locationManager: LocationManager
-    private let logger = Logger(subsystem: "co.enix.Porter", category: "LocationCollector")
+    private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "LocationCollector")
 
     var isAvailable: Bool { true }
 
@@ -24,7 +24,8 @@ final class LocationCollector: DataCollector {
         case .notDetermined: .notDetermined
         case .restricted: .restricted
         case .denied: .denied
-        case .authorizedWhenInUse, .authorizedAlways: .authorized
+        case .authorizedWhenInUse: .limited
+        case .authorizedAlways: .authorized
         @unknown default: .notDetermined
         }
     }
@@ -32,6 +33,9 @@ final class LocationCollector: DataCollector {
     /// The underlying location manager — exposed for backward compatibility with views
     /// that need direct access to current location data.
     var manager: LocationManager { locationManager }
+
+    /// Whether the user wants this collector enabled (pending permission).
+    private var pendingStart = false
 
     init(locationManager: LocationManager) {
         self.locationManager = locationManager
@@ -42,14 +46,37 @@ final class LocationCollector: DataCollector {
     }
 
     func start() {
+        pendingStart = true
+        if permissionStatus == .notDetermined {
+            requestPermission()
+            return
+        }
         guard permissionStatus.isGranted else {
             logger.warning("Cannot start without location permission")
+            pendingStart = false
             return
         }
         locationManager.startMonitoring()
     }
 
     func stop() {
+        pendingStart = false
         locationManager.stopMonitoring()
+    }
+
+    /// Called by the app when authorization status changes to resume a pending start.
+    func handleAuthorizationChange() {
+        guard pendingStart else { return }
+
+        switch locationManager.authorizationStatus {
+        case .authorizedWhenInUse:
+            // Start monitoring with current permission, then escalate to Always
+            locationManager.startMonitoring()
+            locationManager.requestPermission()
+        case .authorizedAlways:
+            locationManager.startMonitoring()
+        default:
+            break
+        }
     }
 }

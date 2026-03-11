@@ -16,7 +16,7 @@ final class HealthCollector: DataCollector {
     let icon = "heart.fill"
     let description = "Heart rate, energy, sleep, workouts"
 
-    private let logger = Logger(subsystem: "co.enix.Porter", category: "HealthCollector")
+    private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "HealthCollector")
 
     // TODO: private var healthStore: HKHealthStore?
     // TODO: private var modelContext: ModelContext

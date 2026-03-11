@@ -14,7 +14,7 @@ final class PedometerCollector: DataCollector {
     let icon = "shoeprints.fill"
     let description = "Steps, distance, floors climbed, cadence"
 
-    private let logger = Logger(subsystem: "co.enix.Porter", category: "PedometerCollector")
+    private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "PedometerCollector")
 
     // TODO: private var pedometer: CMPedometer?
     // TODO: private var modelContext: ModelContext

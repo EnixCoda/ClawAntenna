@@ -23,7 +23,6 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             List {
-                // MARK: - Tracking Status
                 Section("Tracking") {
                     HStack {
                         Label(
@@ -59,7 +58,6 @@ struct DashboardView: View {
                     }
                 }
 
-                // MARK: - Current Location
                 Section("Last Location") {
                     if let loc = locationManager.currentLocation {
                         LabeledContent("Latitude", value: String(format: "%.6f", loc.coordinate.latitude))
@@ -68,11 +66,11 @@ struct DashboardView: View {
                         LabeledContent("Accuracy", value: String(format: "%.1f m", loc.horizontalAccuracy))
                         LabeledContent("Time", value: loc.timestamp.formatted(.dateTime))
                     } else {
-                        ContentUnavailableView("No Location", systemImage: "location.slash", description: Text("Waiting for first location update"))
+                        Text("Waiting for first location update...")
+                            .foregroundStyle(.secondary)
                     }
                 }
 
-                // MARK: - Upload Status
                 Section("Upload Queue") {
                     LabeledContent("Total Records", value: "\(allRecords.count)")
                     LabeledContent("Pending", value: "\(pendingCount)")

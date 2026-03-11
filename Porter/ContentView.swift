@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    var locationManager: LocationManager
-    var uploadService: UploadService
-    var settings: AppSettings
+    @Bindable var locationManager: LocationManager
+    @Bindable var uploadService: UploadService
+    @Bindable var settings: AppSettings
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 

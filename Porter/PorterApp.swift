@@ -4,56 +4,64 @@ import CoreLocation
 
 @main
 struct PorterApp: App {
+    let modelContainer: ModelContainer
     @State private var settings = AppSettings()
     @State private var locationManager = LocationManager()
-    @State private var uploadService: UploadService
-
-    let modelContainer: ModelContainer
+    @State private var uploadService: UploadService?
+    @State private var isReady = false
 
     init() {
-        let container = try! ModelContainer(for: LocationRecord.self)
-        self.modelContainer = container
-
-        let appSettings = AppSettings()
-        self._settings = State(initialValue: appSettings)
-        self._uploadService = State(initialValue: UploadService(settings: appSettings))
+        do {
+            modelContainer = try ModelContainer(for: LocationRecord.self)
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
     }
 
     var body: some Scene {
         WindowGroup {
-            ContentView(
-                locationManager: locationManager,
-                uploadService: uploadService,
-                settings: settings
-            )
+            Group {
+                if isReady, let uploadService {
+                    ContentView(
+                        locationManager: locationManager,
+                        uploadService: uploadService,
+                        settings: settings
+                    )
+                } else {
+                    ProgressView("Starting...")
+                }
+            }
             .modelContainer(modelContainer)
             .onAppear {
-                setupLocationHandler()
+                locationManager.setup()
+                let service = UploadService(settings: settings)
+                uploadService = service
+                setupLocationHandler(uploadService: service)
                 if settings.isTrackingEnabled && locationManager.hasAnyPermission {
                     locationManager.startMonitoring()
                 }
+                isReady = true
             }
         }
     }
 
-    private func setupLocationHandler() {
-        locationManager.onLocationUpdate = { [settings] location in
-            let context = ModelContext(modelContainer)
-            let record = LocationRecord(
-                latitude: location.coordinate.latitude,
-                longitude: location.coordinate.longitude,
-                altitude: location.altitude,
-                horizontalAccuracy: location.horizontalAccuracy,
-                speed: location.speed,
-                recordedAt: location.timestamp
-            )
-            context.insert(record)
-            try? context.save()
+    private func setupLocationHandler(uploadService: UploadService) {
+        locationManager.onLocationUpdate = { location in
+            Task { @MainActor in
+                let context = ModelContext(self.modelContainer)
+                let record = LocationRecord(
+                    latitude: location.coordinate.latitude,
+                    longitude: location.coordinate.longitude,
+                    altitude: location.altitude,
+                    horizontalAccuracy: location.horizontalAccuracy,
+                    speed: location.speed,
+                    recordedAt: location.timestamp
+                )
+                context.insert(record)
+                try? context.save()
 
-            // Trigger upload in background
-            if settings.isConfigured {
-                Task { @MainActor in
-                    let uploadContext = ModelContext(modelContainer)
+                if self.settings.isConfigured {
+                    let uploadContext = ModelContext(self.modelContainer)
                     await uploadService.uploadPendingRecords(modelContext: uploadContext)
                 }
             }

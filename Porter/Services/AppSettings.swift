@@ -21,12 +21,11 @@ final class AppSettings {
     }
 
     var supabaseAPIKey: String {
-        get { KeychainHelper.load(key: Self.keychainAPIKeyName) ?? "" }
-        set {
-            if newValue.isEmpty {
+        didSet {
+            if supabaseAPIKey.isEmpty {
                 KeychainHelper.delete(key: Self.keychainAPIKeyName)
             } else {
-                KeychainHelper.save(key: Self.keychainAPIKeyName, value: newValue)
+                KeychainHelper.save(key: Self.keychainAPIKeyName, value: supabaseAPIKey)
             }
         }
     }
@@ -40,5 +39,6 @@ final class AppSettings {
         self.supabaseURL = UserDefaults.standard.string(forKey: Self.supabaseURLKey) ?? ""
         self.isTrackingEnabled = UserDefaults.standard.bool(forKey: Self.trackingEnabledKey)
         self.lastUploadDate = UserDefaults.standard.object(forKey: Self.lastUploadDateKey) as? Date
+        self.supabaseAPIKey = KeychainHelper.load(key: Self.keychainAPIKeyName) ?? ""
     }
 }

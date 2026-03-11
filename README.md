@@ -88,7 +88,9 @@ OpenClaw can query ClawAntenna's Supabase tables — giving it full SQL access t
 | 🌡️ | **Altimeter** | CoreMotion | Barometric pressure, relative altitude | 🔜 |
 | 🔋 | **Battery** | UIKit | Battery level and charging state | 🔜 |
 | 📶 | **Connectivity** | Network | Wi-Fi / Cellular / None, connection quality | 🔜 |
-| ❤️ | **Health** | HealthKit | Heart rate, energy burned, sleep, workouts | 🔜 |
+| ❤️ | **Health** | HealthKit | Heart rate, energy burned, sleep, workouts | ⏸️ * |
+
+\* *Health collector requires a HealthKit entitlement that must be approved by Apple. Code is implemented but disabled by default.*
 
 Each collector runs independently, can be toggled on/off, and uploads to its own Supabase table.
 
@@ -325,7 +327,7 @@ Records that fail to upload are retried automatically (up to 5 attempts). UUID p
 | **1** | ✅ Architecture | `DataCollector` protocol, modular collector system, generalized upload pipeline |
 | **2** | 🚶 Motion & Activity | Activity type detection, pedometer (steps/distance/floors), barometric altitude |
 | **3** | 📱 Device Context | Battery level & charging state, network connectivity monitoring |
-| **4** | ❤️ Health | HealthKit integration — heart rate, active energy, sleep analysis, workouts (with background delivery) |
+| **4** | ⏸️ Health | HealthKit integration — requires Apple-approved entitlement; code ready but disabled by default |
 | **5** | 🧠 Intelligence | Automatic trip detection, data export (CSV/JSON), dashboard charts & visualizations |
 
 ---

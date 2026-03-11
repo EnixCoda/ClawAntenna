@@ -15,7 +15,9 @@ final class CollectorManager {
     let altimeter: AltimeterCollector
     let battery: BatteryCollector
     let connectivity: ConnectivityCollector
-    let health: HealthCollector
+    // Health collector requires a HealthKit entitlement that needs Apple approval.
+    // Kept in code but excluded from the active collector list for now.
+    // let health: HealthCollector
 
     init(locationManager: LocationManager, modelContainer: ModelContainer) {
         let location = LocationCollector(locationManager: locationManager)
@@ -24,7 +26,6 @@ final class CollectorManager {
         let altimeter = AltimeterCollector(modelContainer: modelContainer)
         let battery = BatteryCollector(modelContainer: modelContainer)
         let connectivity = ConnectivityCollector(modelContainer: modelContainer)
-        let health = HealthCollector(modelContainer: modelContainer)
 
         self.location = location
         self.activity = activity
@@ -32,9 +33,8 @@ final class CollectorManager {
         self.altimeter = altimeter
         self.battery = battery
         self.connectivity = connectivity
-        self.health = health
 
-        self.collectors = [location, activity, pedometer, altimeter, battery, connectivity, health]
+        self.collectors = [location, activity, pedometer, altimeter, battery, connectivity]
     }
 
     func startEnabled(settings: AppSettings) {

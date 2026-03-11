@@ -37,7 +37,8 @@ final class UploadService {
         await uploadBatch(fetchPending(AltimeterRecord.self, from: modelContext), table: AltimeterRecord.supabaseTable, modelContext: modelContext)
         await uploadBatch(fetchPending(BatteryRecord.self, from: modelContext), table: BatteryRecord.supabaseTable, modelContext: modelContext)
         await uploadBatch(fetchPending(ConnectivityRecord.self, from: modelContext), table: ConnectivityRecord.supabaseTable, modelContext: modelContext)
-        await uploadBatch(fetchPending(HealthRecord.self, from: modelContext), table: HealthRecord.supabaseTable, modelContext: modelContext)
+        // HealthRecord upload disabled — HealthKit entitlement requires Apple approval
+        // await uploadBatch(fetchPending(HealthRecord.self, from: modelContext), table: HealthRecord.supabaseTable, modelContext: modelContext)
     }
 
     // MARK: - Private

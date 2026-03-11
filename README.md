@@ -18,9 +18,11 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 <br>
 
 <p>
-  <img src="Homepage.png" width="270" alt="Home — Collectors" />
+  <img src="Homepage.png" width="210" alt="Home" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="Settings.png" width="270" alt="Settings" />
+  <img src="Location.png" width="210" alt="Location" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="Settings.png" width="210" alt="Settings" />
 </p>
 
 **Set it up once. Put your phone in your pocket. Let OpenClaw do the rest.**

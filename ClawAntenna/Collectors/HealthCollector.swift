@@ -15,8 +15,10 @@ final class HealthCollector: DataCollector {
     private let modelContainer: ModelContainer
     private var healthStore: HKHealthStore?
     private var queries: [HKQuery] = []
+    private var pendingStart = false
 
     private(set) var isRunning = false
+    private(set) var permissionStatus: CollectorPermissionStatus = .notDetermined
     var lastError: String?
 
     private static let readTypes: Set<HKSampleType> = [
@@ -30,10 +32,21 @@ final class HealthCollector: DataCollector {
         HKHealthStore.isHealthDataAvailable()
     }
 
-    var permissionStatus: CollectorPermissionStatus {
-        guard isAvailable, let store = healthStore else { return .notDetermined }
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
+        if HKHealthStore.isHealthDataAvailable() {
+            self.healthStore = HKHealthStore()
+        }
+        refreshPermissionStatus()
+    }
+
+    func refreshPermissionStatus() {
+        guard isAvailable, let store = healthStore else {
+            permissionStatus = .notDetermined
+            return
+        }
         let status = store.authorizationStatus(for: HKQuantityType(.heartRate))
-        return switch status {
+        permissionStatus = switch status {
         case .notDetermined: .notDetermined
         case .sharingDenied: .denied
         case .sharingAuthorized: .authorized
@@ -41,22 +54,17 @@ final class HealthCollector: DataCollector {
         }
     }
 
-    init(modelContainer: ModelContainer) {
-        self.modelContainer = modelContainer
-        if HKHealthStore.isHealthDataAvailable() {
-            self.healthStore = HKHealthStore()
-        }
-    }
-
     func requestPermission() {
         guard let healthStore else { return }
         healthStore.requestAuthorization(toShare: [], read: Self.readTypes) { [weak self] _, error in
-            if let error {
-                guard let self else { return }
-                Task { @MainActor in
+            guard let self else { return }
+            Task { @MainActor in
+                if let error {
                     self.lastError = error.localizedDescription
                     self.logger.error("HealthKit authorization failed: \(error.localizedDescription)")
                 }
+                self.refreshPermissionStatus()
+                if self.pendingStart { self.start() }
             }
         }
     }
@@ -66,6 +74,19 @@ final class HealthCollector: DataCollector {
             lastError = "HealthKit not available"
             return
         }
+
+        if permissionStatus == .notDetermined {
+            pendingStart = true
+            requestPermission()
+            return
+        }
+        guard permissionStatus.isGranted else {
+            logger.warning("Cannot start without HealthKit permission")
+            pendingStart = false
+            return
+        }
+
+        pendingStart = false
 
         setupQuantityObserver(for: HKQuantityType(.heartRate), metricType: "heart_rate", unit: HKUnit.count().unitDivided(by: .minute()), unitName: "bpm")
         setupQuantityObserver(for: HKQuantityType(.activeEnergyBurned), metricType: "active_energy", unit: .kilocalorie(), unitName: "kcal")
@@ -77,6 +98,7 @@ final class HealthCollector: DataCollector {
     }
 
     func stop() {
+        pendingStart = false
         guard let healthStore else { return }
         for query in queries { healthStore.stop(query) }
         queries.removeAll()

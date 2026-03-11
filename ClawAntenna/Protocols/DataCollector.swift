@@ -49,16 +49,21 @@ protocol DataCollector: AnyObject, Observable {
     /// Whether the collector is actively collecting data.
     var isRunning: Bool { get }
 
-    /// Current permission status.
+    /// Current permission status. Must be a stored property for UI reactivity.
     var permissionStatus: CollectorPermissionStatus { get }
 
     /// Most recent error, if any.
     var lastError: String? { get }
 
+    /// Re-read the OS permission state and update the stored `permissionStatus`.
+    /// Call after returning from Settings or after the OS permission dialog dismisses.
+    func refreshPermissionStatus()
+
     /// Request the required OS permission for this collector.
     func requestPermission()
 
-    /// Start collecting data. No-op if already running.
+    /// Start collecting data. If permission is needed and not yet granted,
+    /// requests permission and starts automatically once granted.
     func start()
 
     /// Stop collecting data. No-op if already stopped.

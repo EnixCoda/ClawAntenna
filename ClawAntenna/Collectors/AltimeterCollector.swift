@@ -14,16 +14,23 @@ final class AltimeterCollector: DataCollector {
     private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "AltimeterCollector")
     private let modelContainer: ModelContainer
     private var altimeter: CMAltimeter?
+    private var pendingStart = false
 
     private(set) var isRunning = false
+    private(set) var permissionStatus: CollectorPermissionStatus = .notDetermined
     var lastError: String?
 
     var isAvailable: Bool {
         CMAltimeter.isRelativeAltitudeAvailable()
     }
 
-    var permissionStatus: CollectorPermissionStatus {
-        switch CMAltimeter.authorizationStatus() {
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
+        refreshPermissionStatus()
+    }
+
+    func refreshPermissionStatus() {
+        permissionStatus = switch CMAltimeter.authorizationStatus() {
         case .notDetermined: .notDetermined
         case .restricted: .restricted
         case .denied: .denied
@@ -32,14 +39,17 @@ final class AltimeterCollector: DataCollector {
         }
     }
 
-    init(modelContainer: ModelContainer) {
-        self.modelContainer = modelContainer
-    }
-
     func requestPermission() {
         let a = CMAltimeter()
-        a.startRelativeAltitudeUpdates(to: .main) { _, _ in }
-        a.stopRelativeAltitudeUpdates()
+        a.startRelativeAltitudeUpdates(to: .main) { [weak self] _, _ in
+            guard let self else { return }
+            self.refreshPermissionStatus()
+            if self.pendingStart { self.start() }
+        }
+        // Stop immediately — we only needed the first callback to trigger the permission prompt
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            a.stopRelativeAltitudeUpdates()
+        }
     }
 
     func start() {
@@ -48,6 +58,18 @@ final class AltimeterCollector: DataCollector {
             return
         }
 
+        if permissionStatus == .notDetermined {
+            pendingStart = true
+            requestPermission()
+            return
+        }
+        guard permissionStatus.isGranted else {
+            logger.warning("Cannot start without motion permission")
+            pendingStart = false
+            return
+        }
+
+        pendingStart = false
         let a = CMAltimeter()
         a.startRelativeAltitudeUpdates(to: .main) { [weak self] data, error in
             guard let self else { return }
@@ -64,6 +86,7 @@ final class AltimeterCollector: DataCollector {
     }
 
     func stop() {
+        pendingStart = false
         altimeter?.stopRelativeAltitudeUpdates()
         altimeter = nil
         isRunning = false

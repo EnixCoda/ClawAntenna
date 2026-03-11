@@ -19,16 +19,7 @@ final class LocationCollector: DataCollector {
 
     var lastError: String? { locationManager.lastError }
 
-    var permissionStatus: CollectorPermissionStatus {
-        switch locationManager.authorizationStatus {
-        case .notDetermined: .notDetermined
-        case .restricted: .restricted
-        case .denied: .denied
-        case .authorizedWhenInUse: .limited
-        case .authorizedAlways: .authorized
-        @unknown default: .notDetermined
-        }
-    }
+    private(set) var permissionStatus: CollectorPermissionStatus = .notDetermined
 
     /// The underlying location manager — exposed for backward compatibility with views
     /// that need direct access to current location data.
@@ -39,6 +30,18 @@ final class LocationCollector: DataCollector {
 
     init(locationManager: LocationManager) {
         self.locationManager = locationManager
+        refreshPermissionStatus()
+    }
+
+    func refreshPermissionStatus() {
+        permissionStatus = switch locationManager.authorizationStatus {
+        case .notDetermined: .notDetermined
+        case .restricted: .restricted
+        case .denied: .denied
+        case .authorizedWhenInUse: .limited
+        case .authorizedAlways: .authorized
+        @unknown default: .notDetermined
+        }
     }
 
     func requestPermission() {
@@ -66,11 +69,11 @@ final class LocationCollector: DataCollector {
 
     /// Called by the app when authorization status changes to resume a pending start.
     func handleAuthorizationChange() {
+        refreshPermissionStatus()
         guard pendingStart else { return }
 
         switch locationManager.authorizationStatus {
         case .authorizedWhenInUse:
-            // Start monitoring with current permission, then escalate to Always
             locationManager.startMonitoring()
             locationManager.requestPermission()
         case .authorizedAlways:

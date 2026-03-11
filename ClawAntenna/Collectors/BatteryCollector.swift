@@ -29,6 +29,7 @@ final class BatteryCollector: DataCollector {
     }
 
     func requestPermission() {}
+    func refreshPermissionStatus() {}
 
     func start() {
         UIDevice.current.isBatteryMonitoringEnabled = true

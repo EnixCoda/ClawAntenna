@@ -27,6 +27,7 @@ final class ConnectivityCollector: DataCollector {
     }
 
     func requestPermission() {}
+    func refreshPermissionStatus() {}
 
     func start() {
         let m = NWPathMonitor()

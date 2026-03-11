@@ -27,7 +27,7 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 
 <br>
 
-[Quick Start](#-quick-start) · [Data Sources](#-data-sources) · [Why ClawAntenna?](#-why-clawantenna) · [How It Works](#-how-it-works) · [Architecture](#%EF%B8%8F-architecture) · [Roadmap](#%EF%B8%8F-roadmap)
+[Why ClawAntenna?](#-why-clawantenna) · [Data Sources](#-data-sources) · [Architecture](#%EF%B8%8F-architecture) · [Quick Start](#-quick-start) · [Roadmap](#%EF%B8%8F-roadmap)
 
 </div>
 
@@ -92,28 +92,6 @@ Each collector runs independently, can be toggled on/off, and uploads to its own
 
 ---
 
-## 💡 How It Works
-
-```
-┌─────────┐       ┌─────────┐       ┌─────────┐
-│         │       │         │       │         │
-│  📱     │──────▶│  💾     │──────▶│  ☁️     │
-│  Sense  │       │  Buffer │       │  Sync   │
-│         │       │         │       │         │
-└─────────┘       └─────────┘       └─────────┘
- Collectors        SwiftData         Supabase
- gather data       stores locally    uploads when
- in background     offline-first     connected
-```
-
-**1. Sense** — Collectors subscribe to iOS system events (location changes, motion updates, etc.)  
-**2. Buffer** — Every data point is persisted to SwiftData immediately, even without connectivity  
-**3. Sync** — The upload service batches pending records and POSTs them to your Supabase project  
-
-Records that fail to upload are retried automatically (up to 5 attempts). UUID primary keys guarantee idempotency — you'll never get duplicates.
-
----
-
 ## ✨ Features
 
 ### 🔋 Battery-first
@@ -133,6 +111,41 @@ Uploads directly to Supabase's REST API (PostgREST). Spin up a free Supabase pro
 
 ### 🔁 Automatic retry
 Failed uploads are retried up to 5 times with exponential backoff tracking. Nothing gets silently dropped.
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TB
+    subgraph Collectors["📱 Collectors"]
+        direction LR
+        L["📍 Location"]
+        M["🚶 Motion"]
+        P["👟 Pedometer"]
+        B["🔋 Battery"]
+        H["❤️ Health"]
+    end
+
+    subgraph Local["💾 Local Storage"]
+        SD["SwiftData\n(offline buffer)"]
+    end
+
+    subgraph Cloud["☁️ Supabase"]
+        API["REST API\n(PostgREST)"]
+        DB["PostgreSQL\nlocations · activities\npedometer · health · …"]
+    end
+
+    L & M & P & B & H --> SD
+    SD -->|"Batch POST\nRetry · Idempotent"| API
+    API --> DB
+```
+
+**1. Sense** — Collectors subscribe to iOS system events (location changes, motion updates, etc.)  
+**2. Buffer** — Every data point is persisted to SwiftData immediately, even without connectivity  
+**3. Sync** — The upload service batches pending records and POSTs them to your Supabase project  
+
+Records that fail to upload are retried automatically (up to 5 attempts). UUID primary keys guarantee idempotency — you'll never get duplicates.
 
 ---
 
@@ -251,35 +264,6 @@ Select your physical device and hit **⌘R**. (Location services require real ha
 3. Grant permissions when prompted
 
 **That's it. Put your phone in your pocket. ClawAntenna handles the rest.**
-
----
-
-## 🏗️ Architecture
-
-```mermaid
-flowchart TB
-    subgraph Collectors["📱 Collectors"]
-        direction LR
-        L["📍 Location"]
-        M["🚶 Motion"]
-        P["👟 Pedometer"]
-        B["🔋 Battery"]
-        H["❤️ Health"]
-    end
-
-    subgraph Local["💾 Local Storage"]
-        SD["SwiftData\n(offline buffer)"]
-    end
-
-    subgraph Cloud["☁️ Supabase"]
-        API["REST API\n(PostgREST)"]
-        DB["PostgreSQL\nlocations · activities\npedometer · health · …"]
-    end
-
-    L & M & P & B & H --> SD
-    SD -->|"Batch POST\nRetry · Idempotent"| API
-    API --> DB
-```
 
 ---
 

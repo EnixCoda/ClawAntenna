@@ -14,16 +14,23 @@ final class ActivityCollector: DataCollector {
     private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "ActivityCollector")
     private let modelContainer: ModelContainer
     private var activityManager: CMMotionActivityManager?
+    private var pendingStart = false
 
     private(set) var isRunning = false
+    private(set) var permissionStatus: CollectorPermissionStatus = .notDetermined
     var lastError: String?
 
     var isAvailable: Bool {
         CMMotionActivityManager.isActivityAvailable()
     }
 
-    var permissionStatus: CollectorPermissionStatus {
-        switch CMMotionActivityManager.authorizationStatus() {
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
+        refreshPermissionStatus()
+    }
+
+    func refreshPermissionStatus() {
+        permissionStatus = switch CMMotionActivityManager.authorizationStatus() {
         case .notDetermined: .notDetermined
         case .restricted: .restricted
         case .denied: .denied
@@ -32,13 +39,15 @@ final class ActivityCollector: DataCollector {
         }
     }
 
-    init(modelContainer: ModelContainer) {
-        self.modelContainer = modelContainer
-    }
-
     func requestPermission() {
         let manager = CMMotionActivityManager()
-        manager.queryActivityStarting(from: Date(), to: Date(), to: .main) { _, _ in }
+        manager.queryActivityStarting(from: Date(), to: Date(), to: .main) { [weak self] _, _ in
+            guard let self else { return }
+            Task { @MainActor in
+                self.refreshPermissionStatus()
+                if self.pendingStart { self.start() }
+            }
+        }
     }
 
     func start() {
@@ -47,6 +56,18 @@ final class ActivityCollector: DataCollector {
             return
         }
 
+        if permissionStatus == .notDetermined {
+            pendingStart = true
+            requestPermission()
+            return
+        }
+        guard permissionStatus.isGranted else {
+            logger.warning("Cannot start without motion permission")
+            pendingStart = false
+            return
+        }
+
+        pendingStart = false
         let manager = CMMotionActivityManager()
         manager.startActivityUpdates(to: .main) { [weak self] activity in
             guard let activity, let self else { return }
@@ -58,6 +79,7 @@ final class ActivityCollector: DataCollector {
     }
 
     func stop() {
+        pendingStart = false
         activityManager?.stopActivityUpdates()
         activityManager = nil
         isRunning = false

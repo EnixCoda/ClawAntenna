@@ -14,16 +14,23 @@ final class PedometerCollector: DataCollector {
     private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "PedometerCollector")
     private let modelContainer: ModelContainer
     private var pedometer: CMPedometer?
+    private var pendingStart = false
 
     private(set) var isRunning = false
+    private(set) var permissionStatus: CollectorPermissionStatus = .notDetermined
     var lastError: String?
 
     var isAvailable: Bool {
         CMPedometer.isStepCountingAvailable()
     }
 
-    var permissionStatus: CollectorPermissionStatus {
-        switch CMPedometer.authorizationStatus() {
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
+        refreshPermissionStatus()
+    }
+
+    func refreshPermissionStatus() {
+        permissionStatus = switch CMPedometer.authorizationStatus() {
         case .notDetermined: .notDetermined
         case .restricted: .restricted
         case .denied: .denied
@@ -32,13 +39,15 @@ final class PedometerCollector: DataCollector {
         }
     }
 
-    init(modelContainer: ModelContainer) {
-        self.modelContainer = modelContainer
-    }
-
     func requestPermission() {
         let p = CMPedometer()
-        p.queryPedometerData(from: Date().addingTimeInterval(-1), to: Date()) { _, _ in }
+        p.queryPedometerData(from: Date().addingTimeInterval(-1), to: Date()) { [weak self] _, _ in
+            guard let self else { return }
+            Task { @MainActor in
+                self.refreshPermissionStatus()
+                if self.pendingStart { self.start() }
+            }
+        }
     }
 
     func start() {
@@ -47,6 +56,18 @@ final class PedometerCollector: DataCollector {
             return
         }
 
+        if permissionStatus == .notDetermined {
+            pendingStart = true
+            requestPermission()
+            return
+        }
+        guard permissionStatus.isGranted else {
+            logger.warning("Cannot start without motion permission")
+            pendingStart = false
+            return
+        }
+
+        pendingStart = false
         let p = CMPedometer()
         p.startUpdates(from: Date()) { [weak self] data, error in
             guard let self else { return }
@@ -63,6 +84,7 @@ final class PedometerCollector: DataCollector {
     }
 
     func stop() {
+        pendingStart = false
         pedometer?.stopUpdates()
         pedometer = nil
         isRunning = false

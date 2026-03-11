@@ -69,6 +69,9 @@ struct CollectorDetailView: View {
             }
         }
         .navigationTitle(collector.name)
+        .onAppear {
+            collector.refreshPermissionStatus()
+        }
     }
 }
 

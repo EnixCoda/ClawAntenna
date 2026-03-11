@@ -29,7 +29,7 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 
 <br>
 
-[Why ClawAntenna?](#-why-clawantenna) · [Data Sources](#-data-sources) · [Architecture](#%EF%B8%8F-architecture) · [Quick Start](#-quick-start) · [Roadmap](#%EF%B8%8F-roadmap)
+[Why ClawAntenna?](#-why-clawantenna) · [Data Sources](#-data-sources) · [Quick Start](#-quick-start) · [Connect to OpenClaw](#-connect-to-openclaw) · [Architecture](#%EF%B8%8F-architecture) · [Roadmap](#%EF%B8%8F-roadmap)
 
 </div>
 
@@ -72,7 +72,7 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 | *"How much time did I spend at the office?"* | Location dwell times |
 | *"Am I more active on weekdays or weekends?"* | Pedometer + activity trends |
 
-OpenClaw can query ClawAntenna's Supabase tables via a [skill](https://docs.openclaw.ai/tools/skills) or its built-in [tool system](https://docs.openclaw.ai/tools) — giving it full SQL access to your physical-world data.
+OpenClaw can query ClawAntenna's Supabase tables — giving it full SQL access to your physical-world data. See [Connect to OpenClaw](#-connect-to-openclaw) for setup instructions.
 
 > 💡 **ClawAntenna makes OpenClaw aware of the physical world** — no manual logging, no prompting, just ask.
 
@@ -94,63 +94,6 @@ Each collector runs independently, can be toggled on/off, and uploads to its own
 
 ---
 
-## ✨ Features
-
-### 🔋 Battery-first
-Collectors use system-triggered events — significant location changes, motion coprocessor updates, HealthKit background delivery — instead of GPS polling or timers. Your battery barely notices.
-
-### 📴 Offline-first
-All records are buffered locally with SwiftData. No signal? No problem. ClawAntenna syncs everything when connectivity returns.
-
-### 🔐 Secure by default
-API keys live in the iOS Keychain — not in UserDefaults, not in code. HTTPS everywhere. UUID primary keys make every upload idempotent.
-
-### 🧩 Modular collectors
-Every data source follows a common `DataCollector` protocol. Adding a new sensor is just conforming to the protocol — the upload pipeline handles the rest.
-
-### ☁️ No server to maintain
-Uploads directly to Supabase's REST API (PostgREST). Spin up a free Supabase project and you're done. No custom backend, no infra, no Docker.
-
-### 🔁 Automatic retry
-Failed uploads are retried up to 5 times with exponential backoff tracking. Nothing gets silently dropped.
-
----
-
-## 🏗️ Architecture
-
-```mermaid
-flowchart TB
-    subgraph Collectors["📱 Collectors"]
-        direction LR
-        L["📍 Location"]
-        M["🚶 Motion"]
-        P["👟 Pedometer"]
-        B["🔋 Battery"]
-        H["❤️ Health"]
-    end
-
-    subgraph Local["💾 Local Storage"]
-        SD["SwiftData\n(offline buffer)"]
-    end
-
-    subgraph Cloud["☁️ Supabase"]
-        API["REST API\n(PostgREST)"]
-        DB["PostgreSQL\nlocations · activities\npedometer · health · …"]
-    end
-
-    L & M & P & B & H --> SD
-    SD -->|"Batch POST\nRetry · Idempotent"| API
-    API --> DB
-```
-
-**1. Sense** — Collectors subscribe to iOS system events (location changes, motion updates, etc.)  
-**2. Buffer** — Every data point is persisted to SwiftData immediately, even without connectivity  
-**3. Sync** — The upload service batches pending records and POSTs them to your Supabase project  
-
-Records that fail to upload are retried automatically (up to 5 attempts). UUID primary keys guarantee idempotency — you'll never get duplicates.
-
----
-
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -158,14 +101,22 @@ Records that fail to upload are retried automatically (up to 5 attempts). UUID p
 - **Xcode 26+** and a device running **iOS 26+**
 - A free [Supabase](https://supabase.com) project
 
-### 1. Set up Supabase
+### 1. Create your Supabase project
+
+1. Go to [supabase.com](https://supabase.com) and sign up (free tier is enough)
+2. Click **New project**, pick a name and region, set a database password
+3. Once the project is ready, go to **Project Settings → API** and note down:
+   - **Project URL** — looks like `https://abcdefg.supabase.co`
+   - **service_role key** — the long `eyJ...` string under "service_role" (⚠️ not the `anon` key)
+
+### 2. Create the database tables
+
+Go to **SQL Editor** in your Supabase dashboard and run this:
 
 <details>
 <summary><strong>📋 Click to expand — SQL schema for all tables</strong></summary>
 
 <br>
-
-Run this in your Supabase project's **SQL Editor**:
 
 ```sql
 -- 📍 Location data
@@ -250,7 +201,7 @@ Then enable **Row Level Security (RLS)** and create INSERT policies for the serv
 
 </details>
 
-### 2. Clone & build
+### 3. Build the app
 
 ```bash
 git clone https://github.com/EnixCoda/ClawAntenna.git
@@ -259,13 +210,111 @@ open ClawAntenna.xcodeproj
 
 Select your physical device and hit **⌘R**. (Location services require real hardware.)
 
-### 3. Configure & go
+### 4. Connect to Supabase
 
-1. Tap **⚙️ Settings** → enter your Supabase **Project URL** and **service-role key**
-2. Go back to the home screen and tap any collector to enable it
-3. Grant permissions when prompted
+1. Open the app → tap **⚙️** (top-right gear icon) to open Settings
+2. Paste your **Project URL** (e.g. `https://abcdefg.supabase.co`)
+3. Paste your **service_role key**
+4. A green "Connected" indicator confirms it's working
+
+### 5. Enable collectors
+
+1. Go back to the home screen
+2. Tap any collector (Location, Activity, Steps, etc.)
+3. Flip the toggle to enable — grant permissions when prompted
+4. Data starts flowing to Supabase immediately
 
 **That's it. Put your phone in your pocket. ClawAntenna handles the rest.**
+
+---
+
+## 🦞 Connect to OpenClaw
+
+Once ClawAntenna is sending data to Supabase, you can give OpenClaw direct access to query it.
+
+### Option A: Supabase Skill (recommended)
+
+1. In your OpenClaw dashboard, go to **Skills** → **Create Skill**
+2. Set up a **Supabase connector** with the same Project URL and service_role key
+3. OpenClaw can now run SQL against your ClawAntenna tables in natural language
+
+### Option B: Custom Tool
+
+If you use OpenClaw's [tool system](https://docs.openclaw.ai/tools), create a tool that calls the Supabase REST API:
+
+```
+GET https://<project>.supabase.co/rest/v1/locations?order=recorded_at.desc&limit=10
+Headers:
+  apikey: <your service_role key>
+  Authorization: Bearer <your service_role key>
+```
+
+### Try asking OpenClaw:
+
+> *"Where was I last Tuesday afternoon?"*
+> *"How many steps did I take this week?"*
+> *"What was I doing this morning — walking, driving, or at my desk?"*
+> *"Did I sleep well last night?"*
+> *"How much time did I spend at the office this week?"*
+
+OpenClaw queries the Supabase tables ClawAntenna populates and answers with your real data — no manual logging needed.
+
+---
+
+## ✨ Features
+
+### 🔋 Battery-first
+Collectors use system-triggered events — significant location changes, motion coprocessor updates, HealthKit background delivery — instead of GPS polling or timers. Your battery barely notices.
+
+### 📴 Offline-first
+All records are buffered locally with SwiftData. No signal? No problem. ClawAntenna syncs everything when connectivity returns.
+
+### 🔐 Secure by default
+API keys live in the iOS Keychain — not in UserDefaults, not in code. HTTPS everywhere. UUID primary keys make every upload idempotent.
+
+### 🧩 Modular collectors
+Every data source follows a common `DataCollector` protocol. Adding a new sensor is just conforming to the protocol — the upload pipeline handles the rest.
+
+### ☁️ No server to maintain
+Uploads directly to Supabase's REST API (PostgREST). Spin up a free Supabase project and you're done. No custom backend, no infra, no Docker.
+
+### 🔁 Automatic retry
+Failed uploads are retried up to 5 times with exponential backoff tracking. Nothing gets silently dropped.
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TB
+    subgraph Collectors["📱 Collectors"]
+        direction LR
+        L["📍 Location"]
+        M["🚶 Motion"]
+        P["👟 Pedometer"]
+        B["🔋 Battery"]
+        H["❤️ Health"]
+    end
+
+    subgraph Local["💾 Local Storage"]
+        SD["SwiftData\n(offline buffer)"]
+    end
+
+    subgraph Cloud["☁️ Supabase"]
+        API["REST API\n(PostgREST)"]
+        DB["PostgreSQL\nlocations · activities\npedometer · health · …"]
+    end
+
+    L & M & P & B & H --> SD
+    SD -->|"Batch POST\nRetry · Idempotent"| API
+    API --> DB
+```
+
+**1. Sense** — Collectors subscribe to iOS system events (location changes, motion updates, etc.)  
+**2. Buffer** — Every data point is persisted to SwiftData immediately, even without connectivity  
+**3. Sync** — The upload service batches pending records and POSTs them to your Supabase project  
+
+Records that fail to upload are retried automatically (up to 5 attempts). UUID primary keys guarantee idempotency — you'll never get duplicates.
 
 ---
 

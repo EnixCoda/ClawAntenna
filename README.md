@@ -2,11 +2,9 @@
 
 # 📡 ClawAntenna
 
-**Your iPhone's silent data courier.**
+**The sensory companion for [OpenClaw](https://github.com/openclaw/openclaw).** 🦞
 
-ClawAntenna passively collects sensor data from your iPhone and streams it to your own<br>[Supabase](https://supabase.com) Postgres database — no interaction, no subscriptions, no vendor lock-in.
-
-The physical-world data layer for [OpenClaw](https://github.com/openclaw/openclaw) and your personal AI stack. 🦞
+ClawAntenna gives OpenClaw physical-world awareness — passively collecting sensor data<br>from your iPhone and streaming it to your [Supabase](https://supabase.com) Postgres, where OpenClaw can query it.
 
 <br>
 
@@ -25,7 +23,7 @@ The physical-world data layer for [OpenClaw](https://github.com/openclaw/opencla
   <img src="Settings.png" width="270" alt="Settings" />
 </p>
 
-**Set it up once. Put your phone in your pocket. Forget about it.**
+**Set it up once. Put your phone in your pocket. Let OpenClaw do the rest.**
 
 <br>
 
@@ -37,21 +35,19 @@ The physical-world data layer for [OpenClaw](https://github.com/openclaw/opencla
 
 ## Why ClawAntenna?
 
-Most self-tracking apps want you to open them, tap buttons, and remember to log things. **ClawAntenna takes the opposite approach.** Configure it once, and it silently collects data from your iPhone's sensors in the background — uploading everything to a Supabase Postgres database that **you** own.
+[OpenClaw](https://github.com/openclaw/openclaw) is a powerful personal AI — but it only knows what you *tell* it. **ClawAntenna bridges the gap between your physical life and your AI.** It silently collects data from your iPhone's sensors in the background, uploading everything to a Supabase Postgres database that OpenClaw can query directly.
 
-> **Your data. Your database. Your queries.** No proprietary cloud, no monthly subscription, no export limitations.
+The result: OpenClaw can answer questions about your real-world behavior — where you've been, how you move, your health metrics — without you ever having to log anything manually.
 
-ClawAntenna is for developers and data nerds who want raw access to their own behavioral data — to build dashboards, train models, feed their personal AI, or just satisfy curiosity.
+> **OpenClaw knows what you say. ClawAntenna knows what you do.** Together, they know *you*.
 
 ---
 
 ## 🦞 ClawAntenna + OpenClaw
 
-**[OpenClaw](https://github.com/openclaw/openclaw)** is the open-source personal AI assistant with 300k+ stars — it lives in your messaging apps (WhatsApp, Telegram, iMessage, Slack, Discord, …) and acts as your always-on AI. But OpenClaw only knows what you *tell* it.
+**[OpenClaw](https://github.com/openclaw/openclaw)** is the open-source personal AI assistant with 300k+ stars — it lives in your messaging apps and acts as your always-on AI. **ClawAntenna is its sensory extension.**
 
-**ClawAntenna gives OpenClaw a body.**
-
-While OpenClaw handles your digital life — messages, tasks, reminders, web searches — ClawAntenna silently feeds it your physical-world context: where you are, how you move, your health metrics, your device state. Together, they form a **complete personal AI that understands both your digital and physical life.**
+While OpenClaw handles your digital life — messages, tasks, reminders — ClawAntenna feeds it your physical-world context. Together, they form a **complete personal AI that understands both your digital and physical life.**
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -82,9 +78,9 @@ While OpenClaw handles your digital life — messages, tasks, reminders, web sea
 | *"How much time did I spend at the office?"* | Location dwell times |
 | *"Am I more active on weekdays or weekends?"* | Pedometer + activity trends |
 
-OpenClaw can query ClawAntenna's Supabase tables via a [skill](https://docs.openclaw.ai/tools/skills) or through its built-in [tool system](https://docs.openclaw.ai/tools) — just point it at your Supabase project and it has full SQL access to your physical-world data.
+OpenClaw can query ClawAntenna's Supabase tables via a [skill](https://docs.openclaw.ai/tools/skills) or its built-in [tool system](https://docs.openclaw.ai/tools) — giving it full SQL access to your physical-world data.
 
-> 💡 **OpenClaw knows what you say. ClawAntenna knows what you do.** Together, they know *you*.
+> 💡 **ClawAntenna makes OpenClaw aware of the physical world** — no manual logging, no prompting, just ask.
 
 ---
 
@@ -169,7 +165,7 @@ ORDER BY day DESC
 LIMIT 30;
 ```
 
-> 💡 This is the point — **your data lives in Postgres**, so you can query it with SQL, connect it to Grafana, pipe it into a Jupyter notebook, build your own API on top, or let [OpenClaw](https://github.com/openclaw/openclaw) query it for you in natural language.
+> 💡 Your data lives in Postgres — query it with SQL, connect Grafana, pipe into Jupyter, or let [OpenClaw](https://github.com/openclaw/openclaw) query it for you in natural language.
 
 ---
 

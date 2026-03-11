@@ -51,14 +51,13 @@ final class PedometerCollector: DataCollector {
     }
 
     func start() {
-        guard isAvailable else {
-            lastError = "Step counting not available"
-            return
-        }
-
         if permissionStatus == .notDetermined {
             pendingStart = true
             requestPermission()
+            return
+        }
+        guard isAvailable else {
+            lastError = "Step counting not available"
             return
         }
         guard permissionStatus.isGranted else {

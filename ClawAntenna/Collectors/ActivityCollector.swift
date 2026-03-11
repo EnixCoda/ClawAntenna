@@ -51,14 +51,13 @@ final class ActivityCollector: DataCollector {
     }
 
     func start() {
-        guard isAvailable else {
-            lastError = "Activity detection not available"
-            return
-        }
-
         if permissionStatus == .notDetermined {
             pendingStart = true
             requestPermission()
+            return
+        }
+        guard isAvailable else {
+            lastError = "Activity detection not available"
             return
         }
         guard permissionStatus.isGranted else {

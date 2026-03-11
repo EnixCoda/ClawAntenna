@@ -70,14 +70,13 @@ final class HealthCollector: DataCollector {
     }
 
     func start() {
-        guard healthStore != nil else {
-            lastError = "HealthKit not available"
-            return
-        }
-
         if permissionStatus == .notDetermined {
             pendingStart = true
             requestPermission()
+            return
+        }
+        guard healthStore != nil else {
+            lastError = "HealthKit not available"
             return
         }
         guard permissionStatus.isGranted else {

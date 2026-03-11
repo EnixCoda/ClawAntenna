@@ -53,14 +53,13 @@ final class AltimeterCollector: DataCollector {
     }
 
     func start() {
-        guard isAvailable else {
-            lastError = "Altimeter not available"
-            return
-        }
-
         if permissionStatus == .notDetermined {
             pendingStart = true
             requestPermission()
+            return
+        }
+        guard isAvailable else {
+            lastError = "Altimeter not available"
             return
         }
         guard permissionStatus.isGranted else {

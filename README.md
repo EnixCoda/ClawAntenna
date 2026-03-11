@@ -105,9 +105,9 @@ Each collector runs independently, can be toggled on/off, and uploads to its own
 
 1. Go to [supabase.com](https://supabase.com) and sign up (free tier is enough)
 2. Click **New project**, pick a name and region, set a database password
-3. Once the project is ready, go to **Project Settings → API** and note down:
-   - **Project URL** — looks like `https://abcdefg.supabase.co`
-   - **service_role key** — the long `eyJ...` string under "service_role" (⚠️ not the `anon` key)
+3. Once the project is ready, note down:
+   - **Project URL** — looks like `https://abcdefg.supabase.co`, at project homepage
+   - **Secret key** — the long `sb_secret_...`, at **Project Settings → API Keys → Secret keys**
 
 ### 2. Create the database tables
 
@@ -197,7 +197,7 @@ CREATE TABLE health (
 );
 ```
 
-Then enable **Row Level Security (RLS)** and create INSERT policies for the service-role key on each table.
+Then enable **Row Level Security (RLS)** and create INSERT policies for the secret key on each table.
 
 </details>
 
@@ -214,7 +214,7 @@ Select your physical device and hit **⌘R**. (Location services require real ha
 
 1. Open the app → tap **⚙️** (top-right gear icon) to open Settings
 2. Paste your **Project URL** (e.g. `https://abcdefg.supabase.co`)
-3. Paste your **service_role key**
+3. Paste your **secret key**
 4. A green "Connected" indicator confirms it's working
 
 ### 5. Enable collectors
@@ -235,7 +235,7 @@ Once ClawAntenna is sending data to Supabase, you can give OpenClaw direct acces
 ### Option A: Supabase Skill (recommended)
 
 1. In your OpenClaw dashboard, go to **Skills** → **Create Skill**
-2. Set up a **Supabase connector** with the same Project URL and service_role key
+2. Set up a **Supabase connector** with the same Project URL and secret key
 3. OpenClaw can now run SQL against your ClawAntenna tables in natural language
 
 ### Option B: Custom Tool
@@ -245,8 +245,8 @@ If you use OpenClaw's [tool system](https://docs.openclaw.ai/tools), create a to
 ```
 GET https://<project>.supabase.co/rest/v1/locations?order=recorded_at.desc&limit=10
 Headers:
-  apikey: <your service_role key>
-  Authorization: Bearer <your service_role key>
+  apikey: <your secret key>
+  Authorization: Bearer <your secret key>
 ```
 
 ### Try asking OpenClaw:

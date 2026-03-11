@@ -9,7 +9,9 @@ enum UploadStatus: String, Codable {
 }
 
 @Model
-final class LocationRecord {
+final class LocationRecord: Uploadable {
+    static let supabaseTable = "locations"
+
     @Attribute(.unique) var id: UUID
     var latitude: Double
     var longitude: Double
@@ -46,9 +48,8 @@ final class LocationRecord {
         set { uploadStatus = newValue.rawValue }
     }
 
-    /// Converts to the JSON dictionary format expected by Supabase REST API.
     func toSupabaseJSON() -> [String: Any] {
-        let json: [String: Any] = [
+        [
             "id": id.uuidString,
             "latitude": latitude,
             "longitude": longitude,
@@ -57,6 +58,5 @@ final class LocationRecord {
             "speed": speed,
             "recorded_at": ISO8601DateFormatter().string(from: recordedAt)
         ]
-        return json
     }
 }

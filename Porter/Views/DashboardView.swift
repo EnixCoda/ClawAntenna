@@ -1,127 +1,164 @@
 import SwiftUI
 import SwiftData
-import CoreLocation
 
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \LocationRecord.recordedAt, order: .reverse) private var allRecords: [LocationRecord]
 
-    var locationManager: LocationManager
+    var collectorManager: CollectorManager
     var uploadService: UploadService
     var settings: AppSettings
 
     private var pendingCount: Int {
         allRecords.filter { $0.status == .pending || $0.status == .failed }.count
     }
-    private var uploadedCount: Int {
-        allRecords.filter { $0.status == .uploaded }.count
-    }
-    private var failedCount: Int {
-        allRecords.filter { $0.status == .failed && $0.uploadAttempts >= 5 }.count
-    }
 
     var body: some View {
         NavigationStack {
             List {
-                Section("Tracking") {
+                Section("Collectors") {
+                    ForEach(collectorManager.collectors, id: \.id) { collector in
+                        CollectorRow(collector: collector)
+                    }
+                }
+
+                Section {
                     HStack {
                         Label(
-                            locationManager.isMonitoring ? "Monitoring" : "Stopped",
-                            systemImage: locationManager.isMonitoring ? "location.fill" : "location.slash"
+                            "\(collectorManager.activeCount) of \(collectorManager.availableCount) active",
+                            systemImage: "antenna.radiowaves.left.and.right"
                         )
-                        .foregroundStyle(locationManager.isMonitoring ? .green : .secondary)
-                        Spacer()
-                        Toggle("", isOn: Binding(
-                            get: { settings.isTrackingEnabled },
-                            set: { newValue in
-                                settings.isTrackingEnabled = newValue
-                                if newValue {
-                                    locationManager.startMonitoring()
-                                } else {
-                                    locationManager.stopMonitoring()
-                                }
-                            }
-                        ))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                     }
-
-                    if !locationManager.hasAlwaysPermission {
-                        HStack {
-                            Label("Permission: \(locationManager.permissionDescription)", systemImage: "exclamationmark.triangle")
-                                .foregroundStyle(.orange)
-                            Spacer()
-                            Button("Grant") {
-                                locationManager.requestPermission()
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(.orange)
-                        }
-                    }
-                }
-
-                Section("Last Location") {
-                    if let loc = locationManager.currentLocation {
-                        LabeledContent("Latitude", value: String(format: "%.6f", loc.coordinate.latitude))
-                        LabeledContent("Longitude", value: String(format: "%.6f", loc.coordinate.longitude))
-                        LabeledContent("Altitude", value: String(format: "%.1f m", loc.altitude))
-                        LabeledContent("Accuracy", value: String(format: "%.1f m", loc.horizontalAccuracy))
-                        LabeledContent("Time", value: loc.timestamp.formatted(.dateTime))
-                    } else {
-                        Text("Waiting for first location update...")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Section("Upload Queue") {
-                    LabeledContent("Total Records", value: "\(allRecords.count)")
-                    LabeledContent("Pending", value: "\(pendingCount)")
-                    LabeledContent("Uploaded", value: "\(uploadedCount)")
-                    if failedCount > 0 {
-                        LabeledContent("Failed (max retries)", value: "\(failedCount)")
-                            .foregroundStyle(.red)
-                    }
-
-                    if let lastUpload = settings.lastUploadDate {
-                        LabeledContent("Last Upload", value: lastUpload.formatted(.relative(presentation: .named)))
-                    }
-
-                    if uploadService.isUploading {
-                        HStack {
-                            ProgressView()
-                                .padding(.trailing, 4)
-                            Text("Uploading...")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    if !settings.isConfigured {
-                        Label("Supabase not configured", systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.orange)
-                    }
-
-                    if let error = uploadService.lastError {
-                        Label(error, systemImage: "xmark.circle")
-                            .foregroundStyle(.red)
-                            .font(.caption)
-                    }
-
-                    Button {
-                        Task {
-                            await uploadService.uploadPendingRecords(modelContext: modelContext)
-                        }
-                    } label: {
-                        Label("Upload Now", systemImage: "arrow.up.circle")
-                    }
-                    .disabled(!settings.isConfigured || uploadService.isUploading || pendingCount == 0)
                 }
             }
             .navigationTitle("Porter")
             .toolbar {
-                NavigationLink {
-                    SettingsView(settings: settings)
-                } label: {
-                    Image(systemName: "gear")
+                ToolbarItem(placement: .topBarLeading) {
+                    if pendingCount > 0 {
+                        Button {
+                            Task {
+                                await uploadService.uploadPendingRecords(modelContext: modelContext)
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                if uploadService.isUploading {
+                                    ProgressView()
+                                        .controlSize(.mini)
+                                } else {
+                                    Image(systemName: "arrow.up.circle")
+                                }
+                                Text("\(pendingCount)")
+                                    .font(.caption.weight(.medium))
+                            }
+                        }
+                        .disabled(!settings.isConfigured || uploadService.isUploading)
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button {
+                            enableAll()
+                        } label: {
+                            Label("Enable All", systemImage: "bolt.fill")
+                        }
+
+                        Button(role: .destructive) {
+                            disableAll()
+                        } label: {
+                            Label("Disable All", systemImage: "bolt.slash")
+                        }
+
+                        Divider()
+
+                        NavigationLink {
+                            SettingsView(
+                                uploadService: uploadService,
+                                settings: settings
+                            )
+                        } label: {
+                            Label("Settings", systemImage: "gear")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
                 }
             }
+        }
+    }
+
+    private func enableAll() {
+        for collector in collectorManager.collectors {
+            let key = "collector_\(collector.id)_enabled"
+            UserDefaults.standard.set(true, forKey: key)
+            if collector.permissionStatus.isGranted {
+                collector.start()
+            }
+        }
+    }
+
+    private func disableAll() {
+        for collector in collectorManager.collectors {
+            let key = "collector_\(collector.id)_enabled"
+            UserDefaults.standard.set(false, forKey: key)
+            collector.stop()
+        }
+    }
+}
+
+/// A single row displaying a collector's name, status, and toggle.
+private struct CollectorRow: View {
+    let collector: any DataCollector
+
+    private var enabledKey: String { "collector_\(collector.id)_enabled" }
+
+    private var isEnabled: Binding<Bool> {
+        Binding(
+            get: { UserDefaults.standard.bool(forKey: enabledKey) },
+            set: { newValue in
+                UserDefaults.standard.set(newValue, forKey: enabledKey)
+                if newValue {
+                    if collector.permissionStatus == .notDetermined {
+                        collector.requestPermission()
+                    }
+                    if collector.permissionStatus.isGranted {
+                        collector.start()
+                    }
+                } else {
+                    collector.stop()
+                }
+            }
+        )
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: collector.icon)
+                .font(.title2)
+                .foregroundStyle(collector.isRunning ? .green : .secondary)
+                .frame(width: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(collector.name)
+                    .font(.body.weight(.medium))
+
+                Text(collector.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if collector.permissionStatus == .denied {
+                Image(systemName: "exclamationmark.triangle")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+            }
+
+            Toggle("", isOn: isEnabled)
+                .labelsHidden()
         }
     }
 }

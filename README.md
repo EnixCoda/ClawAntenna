@@ -19,16 +19,11 @@ The physical-world data layer for [OpenClaw](https://github.com/openclaw/opencla
 
 <br>
 
-<!-- 
-  TODO: Replace with actual screenshots before publishing
-  <p>
-    <img src="assets/dashboard.png" width="230" alt="Dashboard" />
-    &nbsp;&nbsp;
-    <img src="assets/collectors.png" width="230" alt="Collectors" />
-    &nbsp;&nbsp;
-    <img src="assets/settings.png" width="230" alt="Settings" />
-  </p>
--->
+<p>
+  <img src="Homepage.png" width="270" alt="Home — Collectors" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="Settings.png" width="270" alt="Settings" />
+</p>
 
 **Set it up once. Put your phone in your pocket. Forget about it.**
 

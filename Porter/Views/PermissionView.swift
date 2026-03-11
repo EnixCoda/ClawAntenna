@@ -9,16 +9,31 @@ struct PermissionView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            Image(systemName: "location.circle.fill")
-                .font(.system(size: 80))
-                .foregroundStyle(.blue)
+            // Branding
+            VStack(spacing: 8) {
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .font(.system(size: 56))
+                    .foregroundStyle(.tint)
 
+                Text("Porter")
+                    .font(.largeTitle.bold())
+
+                Text("Silent data collection agent for your iPhone")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            // Permission ask
             VStack(spacing: 12) {
+                Image(systemName: "location.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.blue)
+
                 Text("Location Access")
-                    .font(.title.bold())
+                    .font(.title3.bold())
 
                 Text("Porter collects your location in the background and reports it to your configured endpoint. This requires \"Always\" location permission.")
-                    .font(.body)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
@@ -58,7 +73,6 @@ struct PermissionView: View {
                 case .authorizedAlways:
                     Label("\"Always\" permission granted", systemImage: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                        .font(.headline)
 
                 case .denied, .restricted:
                     Label("Location access denied", systemImage: "xmark.circle")

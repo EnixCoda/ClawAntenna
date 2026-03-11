@@ -7,12 +7,21 @@ struct PorterApp: App {
     let modelContainer: ModelContainer
     @State private var settings = AppSettings()
     @State private var locationManager = LocationManager()
+    @State private var collectorManager: CollectorManager?
     @State private var uploadService: UploadService?
     @State private var isReady = false
 
     init() {
         do {
-            modelContainer = try ModelContainer(for: LocationRecord.self)
+            modelContainer = try ModelContainer(for:
+                LocationRecord.self,
+                ActivityRecord.self,
+                PedometerRecord.self,
+                AltimeterRecord.self,
+                BatteryRecord.self,
+                ConnectivityRecord.self,
+                HealthRecord.self
+            )
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
@@ -21,14 +30,22 @@ struct PorterApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if isReady, let uploadService {
+                if isReady, let uploadService, let collectorManager {
                     ContentView(
                         locationManager: locationManager,
+                        collectorManager: collectorManager,
                         uploadService: uploadService,
                         settings: settings
                     )
                 } else {
-                    ProgressView("Starting...")
+                    VStack(spacing: 12) {
+                        Image(systemName: "antenna.radiowaves.left.and.right")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.tint)
+                        Text("Porter")
+                            .font(.title2.bold())
+                        ProgressView()
+                    }
                 }
             }
             .modelContainer(modelContainer)
@@ -36,10 +53,14 @@ struct PorterApp: App {
                 locationManager.setup()
                 let service = UploadService(settings: settings)
                 uploadService = service
+                let manager = CollectorManager(locationManager: locationManager)
+                collectorManager = manager
                 setupLocationHandler(uploadService: service)
-                if settings.isTrackingEnabled && locationManager.hasAnyPermission {
-                    locationManager.startMonitoring()
+                // Migrate legacy tracking toggle to collector system
+                if settings.isTrackingEnabled {
+                    UserDefaults.standard.set(true, forKey: "collector_location_enabled")
                 }
+                manager.startEnabled(settings: settings)
                 isReady = true
             }
         }

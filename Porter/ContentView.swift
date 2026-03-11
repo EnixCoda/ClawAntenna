@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Bindable var locationManager: LocationManager
+    var locationManager: LocationManager
+    var collectorManager: CollectorManager
     @Bindable var uploadService: UploadService
     @Bindable var settings: AppSettings
 
@@ -10,7 +11,7 @@ struct ContentView: View {
     var body: some View {
         if hasCompletedOnboarding {
             DashboardView(
-                locationManager: locationManager,
+                collectorManager: collectorManager,
                 uploadService: uploadService,
                 settings: settings
             )

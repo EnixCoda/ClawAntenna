@@ -330,38 +330,6 @@ flowchart TB
 
 ---
 
-## 📂 Project Structure
-
-```
-ClawAntenna/
-├── ClawAntennaApp.swift          # App entry, service wiring
-├── ContentView.swift             # Root view
-├── Protocols/
-│   ├── DataCollector.swift       # Common collector protocol
-│   └── Uploadable.swift          # Upload contract for SwiftData models
-├── Collectors/
-│   ├── LocationCollector.swift   # GPS via CoreLocation
-│   ├── ActivityCollector.swift   # Motion activity via CoreMotion
-│   ├── PedometerCollector.swift  # Steps & distance
-│   ├── AltimeterCollector.swift  # Barometric pressure
-│   ├── BatteryCollector.swift    # Battery level & state
-│   ├── ConnectivityCollector.swift # Network type & quality
-│   └── HealthCollector.swift     # HealthKit metrics
-├── Models/                       # SwiftData models (one per collector)
-├── Services/
-│   ├── LocationManager.swift     # CoreLocation background monitoring
-│   ├── CollectorManager.swift    # Registry for all collectors
-│   ├── UploadService.swift       # Batch upload to Supabase REST API
-│   ├── KeychainHelper.swift      # Secure credential storage
-│   └── AppSettings.swift         # User preferences & config
-└── Views/
-    ├── DashboardView.swift       # Collector list with status
-    ├── CollectorDetailView.swift # Per-collector detail & permissions
-    └── SettingsView.swift        # Supabase config & upload queue
-```
-
----
-
 ## 🗺️ Roadmap
 
 | Phase | Focus | Description |
@@ -371,8 +339,6 @@ ClawAntenna/
 | **3** | 📱 Device Context | Battery level & charging state, network connectivity monitoring |
 | **4** | ❤️ Health | HealthKit integration — heart rate, active energy, sleep analysis, workouts (with background delivery) |
 | **5** | 🧠 Intelligence | Automatic trip detection, data export (CSV/JSON), dashboard charts & visualizations |
-
-See the full breakdown in the [plan](/plan.md) *(coming soon)*.
 
 ---
 

@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🧳 Porter
+# 📡 ClawAntenna
 
 **Your iPhone's silent data courier.**
 
-Porter passively collects sensor data from your iPhone and streams it to your own<br>[Supabase](https://supabase.com) Postgres database — no interaction, no subscriptions, no vendor lock-in.
+ClawAntenna passively collects sensor data from your iPhone and streams it to your own<br>[Supabase](https://supabase.com) Postgres database — no interaction, no subscriptions, no vendor lock-in.
 
 The physical-world data layer for [OpenClaw](https://github.com/openclaw/openclaw) and your personal AI stack. 🦞
 
@@ -35,30 +35,30 @@ The physical-world data layer for [OpenClaw](https://github.com/openclaw/opencla
 
 <br>
 
-## Why Porter?
+## Why ClawAntenna?
 
-Most self-tracking apps want you to open them, tap buttons, and remember to log things. **Porter takes the opposite approach.** Configure it once, and it silently collects data from your iPhone's sensors in the background — uploading everything to a Supabase Postgres database that **you** own.
+Most self-tracking apps want you to open them, tap buttons, and remember to log things. **ClawAntenna takes the opposite approach.** Configure it once, and it silently collects data from your iPhone's sensors in the background — uploading everything to a Supabase Postgres database that **you** own.
 
 > **Your data. Your database. Your queries.** No proprietary cloud, no monthly subscription, no export limitations.
 
-Porter is for developers and data nerds who want raw access to their own behavioral data — to build dashboards, train models, feed their personal AI, or just satisfy curiosity.
+ClawAntenna is for developers and data nerds who want raw access to their own behavioral data — to build dashboards, train models, feed their personal AI, or just satisfy curiosity.
 
 ---
 
-## 🦞 Porter + OpenClaw
+## 🦞 ClawAntenna + OpenClaw
 
 **[OpenClaw](https://github.com/openclaw/openclaw)** is the open-source personal AI assistant with 300k+ stars — it lives in your messaging apps (WhatsApp, Telegram, iMessage, Slack, Discord, …) and acts as your always-on AI. But OpenClaw only knows what you *tell* it.
 
-**Porter gives OpenClaw a body.**
+**ClawAntenna gives OpenClaw a body.**
 
-While OpenClaw handles your digital life — messages, tasks, reminders, web searches — Porter silently feeds it your physical-world context: where you are, how you move, your health metrics, your device state. Together, they form a **complete personal AI that understands both your digital and physical life.**
+While OpenClaw handles your digital life — messages, tasks, reminders, web searches — ClawAntenna silently feeds it your physical-world context: where you are, how you move, your health metrics, your device state. Together, they form a **complete personal AI that understands both your digital and physical life.**
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                     Your Personal AI Stack                   │
 │                                                              │
 │  ┌─────────────┐    Supabase     ┌────────────────────────┐  │
-│  │  📱 Porter  │───(Postgres)───▶│  🦞 OpenClaw           │  │
+│  │  📡 ClawAntenna  │───(Postgres)───▶│  🦞 OpenClaw           │  │
 │  │             │                 │                        │  │
 │  │  Location   │  "Where was I   │  WhatsApp · Telegram   │  │
 │  │  Motion     │   last Tuesday  │  iMessage · Slack      │  │
@@ -73,7 +73,7 @@ While OpenClaw handles your digital life — messages, tasks, reminders, web sea
 
 **What this unlocks:**
 
-| You ask OpenClaw… | Porter provides… |
+| You ask OpenClaw… | ClawAntenna provides… |
 |---|---|
 | *"Where was I last Tuesday afternoon?"* | GPS location history |
 | *"How active was I this week?"* | Step count, distance, activity types |
@@ -82,9 +82,9 @@ While OpenClaw handles your digital life — messages, tasks, reminders, web sea
 | *"How much time did I spend at the office?"* | Location dwell times |
 | *"Am I more active on weekdays or weekends?"* | Pedometer + activity trends |
 
-OpenClaw can query Porter's Supabase tables via a [skill](https://docs.openclaw.ai/tools/skills) or through its built-in [tool system](https://docs.openclaw.ai/tools) — just point it at your Supabase project and it has full SQL access to your physical-world data.
+OpenClaw can query ClawAntenna's Supabase tables via a [skill](https://docs.openclaw.ai/tools/skills) or through its built-in [tool system](https://docs.openclaw.ai/tools) — just point it at your Supabase project and it has full SQL access to your physical-world data.
 
-> 💡 **OpenClaw knows what you say. Porter knows what you do.** Together, they know *you*.
+> 💡 **OpenClaw knows what you say. ClawAntenna knows what you do.** Together, they know *you*.
 
 ---
 
@@ -128,7 +128,7 @@ Records that fail to upload are retried automatically (up to 5 attempts). UUID p
 
 ## 🔍 Query Your Life
 
-Once Porter is running, your Supabase database becomes a queryable journal of your life. Here are some things you can ask:
+Once ClawAntenna is running, your Supabase database becomes a queryable journal of your life. Here are some things you can ask:
 
 ```sql
 -- Where do I spend most of my time?
@@ -179,7 +179,7 @@ LIMIT 30;
 Collectors use system-triggered events — significant location changes, motion coprocessor updates, HealthKit background delivery — instead of GPS polling or timers. Your battery barely notices.
 
 ### 📴 Offline-first
-All records are buffered locally with SwiftData. No signal? No problem. Porter syncs everything when connectivity returns.
+All records are buffered locally with SwiftData. No signal? No problem. ClawAntenna syncs everything when connectivity returns.
 
 ### 🔐 Secure by default
 API keys live in the iOS Keychain — not in UserDefaults, not in code. HTTPS everywhere. UUID primary keys make every upload idempotent.
@@ -297,8 +297,8 @@ Then enable **Row Level Security (RLS)** and create INSERT policies for the serv
 ### 2. Clone & build
 
 ```bash
-git clone https://github.com/user/Porter.git
-open Porter.xcodeproj
+git clone https://github.com/EnixCoda/ClawAntenna.git
+open ClawAntenna.xcodeproj
 ```
 
 Select your physical device and hit **⌘R**. (Location services require real hardware.)
@@ -309,7 +309,7 @@ Select your physical device and hit **⌘R**. (Location services require real ha
 2. Tap **⚙️** → enter your Supabase **Project URL** and **service-role key**
 3. Toggle tracking on
 
-**That's it. Put your phone in your pocket. Porter handles the rest.**
+**That's it. Put your phone in your pocket. ClawAntenna handles the rest.**
 
 ---
 
@@ -345,8 +345,8 @@ flowchart TB
 ## 📂 Project Structure
 
 ```
-Porter/
-├── PorterApp.swift              # App entry, service wiring
+ClawAntenna/
+├── ClawAntennaApp.swift              # App entry, service wiring
 ├── ContentView.swift            # Onboarding ↔ dashboard router
 ├── Models/
 │   └── LocationRecord.swift     # SwiftData model + upload status
@@ -392,7 +392,7 @@ git push origin feat/awesome-collector
 
 **Ideas for contributions:**
 - 🆕 New collector (Bluetooth, NFC, screen time, …)
-- 🦞 OpenClaw skill for querying Porter data in natural language
+- 🦞 OpenClaw skill for querying ClawAntenna data in natural language
 - 📊 Grafana dashboard templates for the Supabase data
 - 🧪 Unit tests for upload retry logic
 - 📱 Widget extension for quick status glance
@@ -409,7 +409,7 @@ git push origin feat/awesome-collector
 
 <br>
 
-**Porter is free and open source.**<br>
+**ClawAntenna is free and open source.**<br>
 If you find it useful, a ⭐ on GitHub goes a long way.
 
 <br>

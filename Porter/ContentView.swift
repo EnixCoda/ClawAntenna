@@ -1,24 +1,23 @@
-//
-//  ContentView.swift
-//  Porter
-//
-//  Created by Yang, Yixin on 2026/3/11.
-//
-
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    var locationManager: LocationManager
+    var uploadService: UploadService
+    var settings: AppSettings
 
-#Preview {
-    ContentView()
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
+    var body: some View {
+        if hasCompletedOnboarding {
+            DashboardView(
+                locationManager: locationManager,
+                uploadService: uploadService,
+                settings: settings
+            )
+        } else {
+            PermissionView(locationManager: locationManager) {
+                hasCompletedOnboarding = true
+            }
+        }
+    }
 }

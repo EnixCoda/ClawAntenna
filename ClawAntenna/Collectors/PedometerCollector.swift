@@ -1,12 +1,9 @@
 import Foundation
+import CoreMotion
+import SwiftData
 import os
 
-// TODO: import CoreMotion
-
 /// Collects pedometer data: steps, distance, floors, cadence.
-///
-/// Uses CMPedometer for real-time step counting. The motion coprocessor handles
-/// counting even when the app is suspended, so this is very battery-efficient.
 @Observable
 final class PedometerCollector: DataCollector {
     let id = "pedometer"
@@ -15,55 +12,80 @@ final class PedometerCollector: DataCollector {
     let description = "Steps, distance, floors climbed, cadence"
 
     private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "PedometerCollector")
-
-    // TODO: private var pedometer: CMPedometer?
-    // TODO: private var modelContext: ModelContext
+    private let modelContainer: ModelContainer
+    private var pedometer: CMPedometer?
 
     private(set) var isRunning = false
     var lastError: String?
 
     var isAvailable: Bool {
-        // TODO: CMPedometer.isStepCountingAvailable()
-        true
+        CMPedometer.isStepCountingAvailable()
     }
 
     var permissionStatus: CollectorPermissionStatus {
-        // TODO: Check CMPedometer.authorizationStatus()
-        .authorized
+        switch CMPedometer.authorizationStatus() {
+        case .notDetermined: .notDetermined
+        case .restricted: .restricted
+        case .denied: .denied
+        case .authorized: .authorized
+        @unknown default: .notDetermined
+        }
+    }
+
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
     }
 
     func requestPermission() {
-        // TODO: CMPedometer permission is requested on first query.
-        logger.info("TODO: Request pedometer permission")
+        let p = CMPedometer()
+        p.queryPedometerData(from: Date().addingTimeInterval(-1), to: Date()) { _, _ in }
     }
 
     func start() {
-        guard permissionStatus.isGranted || permissionStatus == .notDetermined else { return }
+        guard isAvailable else {
+            lastError = "Step counting not available"
+            return
+        }
 
-        // TODO: pedometer = CMPedometer()
-        // TODO: pedometer?.startUpdates(from: Date()) { data, error in
-        //     guard let data else { return }
-        //     let record = PedometerRecord(
-        //         steps: data.numberOfSteps.intValue,
-        //         distance: data.distance?.doubleValue,
-        //         floorsAscended: data.floorsAscended?.intValue,
-        //         floorsDescended: data.floorsDescended?.intValue,
-        //         cadence: data.currentCadence?.doubleValue,
-        //         periodStart: data.startDate,
-        //         periodEnd: data.endDate
-        //     )
-        //     self.modelContext.insert(record)
-        //     try? self.modelContext.save()
-        // }
-
+        let p = CMPedometer()
+        p.startUpdates(from: Date()) { [weak self] data, error in
+            guard let self else { return }
+            if let error {
+                Task { @MainActor in self.lastError = error.localizedDescription }
+                return
+            }
+            guard let data else { return }
+            Task { @MainActor in self.handlePedometerData(data) }
+        }
+        pedometer = p
         isRunning = true
-        logger.info("TODO: Started pedometer updates")
+        logger.info("Started pedometer updates")
     }
 
     func stop() {
-        // TODO: pedometer?.stopUpdates()
-        // TODO: pedometer = nil
+        pedometer?.stopUpdates()
+        pedometer = nil
         isRunning = false
         logger.info("Stopped pedometer updates")
+    }
+
+    private func handlePedometerData(_ data: CMPedometerData) {
+        let context = ModelContext(modelContainer)
+        let record = PedometerRecord(
+            steps: data.numberOfSteps.intValue,
+            distance: data.distance?.doubleValue,
+            floorsAscended: data.floorsAscended?.intValue,
+            floorsDescended: data.floorsDescended?.intValue,
+            cadence: data.currentCadence?.doubleValue,
+            periodStart: data.startDate,
+            periodEnd: data.endDate
+        )
+        context.insert(record)
+        do {
+            try context.save()
+        } catch {
+            lastError = error.localizedDescription
+            logger.error("Failed to save pedometer record: \(error.localizedDescription)")
+        }
     }
 }

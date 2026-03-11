@@ -6,5 +6,9 @@
 <array>
 <string>location</string>
 </array>
+<key>NSMotionUsageDescription</key>
+<string>ClawAntenna uses motion data to detect your activity type, count steps, and measure altitude changes.</string>
+<key>NSHealthShareUsageDescription</key>
+<string>ClawAntenna reads health metrics like heart rate, energy burned, and sleep data to upload to your personal database.</string>
 </dict>
 </plist>

@@ -1,11 +1,10 @@
 import Foundation
 import UIKit
+import SwiftData
 import os
 
 /// Collects battery level and charging state.
-///
 /// Samples on state change (plugged/unplugged) and periodically.
-/// No special permissions required — uses UIDevice APIs.
 @Observable
 final class BatteryCollector: DataCollector {
     let id = "battery"
@@ -14,56 +13,82 @@ final class BatteryCollector: DataCollector {
     let description = "Battery level and charging state"
 
     private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "BatteryCollector")
-
-    // TODO: private var timer: Timer?
-    // TODO: private var modelContext: ModelContext
+    private let modelContainer: ModelContainer
+    private var timer: Timer?
+    private var stateObserver: NSObjectProtocol?
+    private var levelObserver: NSObjectProtocol?
 
     private(set) var isRunning = false
     var lastError: String?
 
     var isAvailable: Bool { true }
-
-    /// No permission needed for battery monitoring.
     var permissionStatus: CollectorPermissionStatus { .notRequired }
 
-    func requestPermission() {
-        // No-op — battery monitoring requires no permission.
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
     }
 
-    func start() {
-        // TODO: UIDevice.current.isBatteryMonitoringEnabled = true
-        //
-        // TODO: Observe battery state changes via NotificationCenter:
-        //   NotificationCenter.default.addObserver(
-        //       forName: UIDevice.batteryStateDidChangeNotification, ...)
-        //   NotificationCenter.default.addObserver(
-        //       forName: UIDevice.batteryLevelDidChangeNotification, ...)
-        //
-        // TODO: Also sample periodically (e.g. every 15 minutes) via Timer.
+    func requestPermission() {}
 
+    func start() {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+
+        stateObserver = NotificationCenter.default.addObserver(
+            forName: UIDevice.batteryStateDidChangeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in self.recordBatteryState() }
+        }
+
+        levelObserver = NotificationCenter.default.addObserver(
+            forName: UIDevice.batteryLevelDidChangeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in self.recordBatteryState() }
+        }
+
+        timer = Timer.scheduledTimer(withTimeInterval: 15 * 60, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in self.recordBatteryState() }
+        }
+
+        recordBatteryState()
         isRunning = true
-        logger.info("TODO: Started battery monitoring")
+        logger.info("Started battery monitoring")
     }
 
     func stop() {
-        // TODO: UIDevice.current.isBatteryMonitoringEnabled = false
-        // TODO: Remove notification observers
-        // TODO: timer?.invalidate(); timer = nil
+        if let stateObserver { NotificationCenter.default.removeObserver(stateObserver) }
+        if let levelObserver { NotificationCenter.default.removeObserver(levelObserver) }
+        stateObserver = nil
+        levelObserver = nil
+        timer?.invalidate()
+        timer = nil
+        UIDevice.current.isBatteryMonitoringEnabled = false
         isRunning = false
         logger.info("Stopped battery monitoring")
     }
 
-    // TODO: private func recordBatteryState() {
-    //     let level = Double(UIDevice.current.batteryLevel)  // 0.0–1.0
-    //     let state = switch UIDevice.current.batteryState {
-    //         case .unknown: "unknown"
-    //         case .unplugged: "unplugged"
-    //         case .charging: "charging"
-    //         case .full: "full"
-    //         @unknown default: "unknown"
-    //     }
-    //     let record = BatteryRecord(level: level, state: state)
-    //     modelContext.insert(record)
-    //     try? modelContext.save()
-    // }
+    private func recordBatteryState() {
+        let level = Double(UIDevice.current.batteryLevel)
+        let state: String = switch UIDevice.current.batteryState {
+        case .unknown: "unknown"
+        case .unplugged: "unplugged"
+        case .charging: "charging"
+        case .full: "full"
+        @unknown default: "unknown"
+        }
+
+        let context = ModelContext(modelContainer)
+        let record = BatteryRecord(level: level, state: state)
+        context.insert(record)
+        do {
+            try context.save()
+        } catch {
+            lastError = error.localizedDescription
+            logger.error("Failed to save battery record: \(error.localizedDescription)")
+        }
+    }
 }

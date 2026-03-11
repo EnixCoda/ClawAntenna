@@ -9,6 +9,7 @@ struct ClawAntennaApp: App {
     @State private var locationManager = LocationManager()
     @State private var collectorManager: CollectorManager?
     @State private var uploadService: UploadService?
+    @State private var uploadTimer: Timer?
     @State private var isReady = false
 
     init() {
@@ -52,13 +53,13 @@ struct ClawAntennaApp: App {
                 locationManager.setup()
                 let service = UploadService(settings: settings)
                 uploadService = service
-                let manager = CollectorManager(locationManager: locationManager)
+                let manager = CollectorManager(locationManager: locationManager, modelContainer: modelContainer)
                 collectorManager = manager
                 setupLocationHandler(uploadService: service)
+                setupPeriodicUpload(uploadService: service)
                 locationManager.onAuthorizationChange = { [manager] in
                     manager.location.handleAuthorizationChange()
                 }
-                // Migrate legacy tracking toggle to collector system
                 if settings.isTrackingEnabled {
                     UserDefaults.standard.set(true, forKey: "collector_location_enabled")
                 }
@@ -87,6 +88,17 @@ struct ClawAntennaApp: App {
                     let uploadContext = ModelContext(self.modelContainer)
                     await uploadService.uploadPendingRecords(modelContext: uploadContext)
                 }
+            }
+        }
+    }
+
+    /// Periodically uploads pending records from all collectors every 5 minutes.
+    private func setupPeriodicUpload(uploadService: UploadService) {
+        uploadTimer = Timer.scheduledTimer(withTimeInterval: 5 * 60, repeats: true) { _ in
+            Task { @MainActor in
+                guard self.settings.isConfigured else { return }
+                let context = ModelContext(self.modelContainer)
+                await uploadService.uploadPendingRecords(modelContext: context)
             }
         }
     }

@@ -1,11 +1,9 @@
 import Foundation
 import Network
+import SwiftData
 import os
 
 /// Monitors network connectivity type and quality using NWPathMonitor.
-///
-/// Logs changes between Wi-Fi, cellular, and disconnected states.
-/// No special permissions required.
 @Observable
 final class ConnectivityCollector: DataCollector {
     let id = "connectivity"
@@ -14,58 +12,63 @@ final class ConnectivityCollector: DataCollector {
     let description = "Wi-Fi, cellular, connection quality"
 
     private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "ConnectivityCollector")
-
-    // TODO: private var monitor: NWPathMonitor?
-    // TODO: private let monitorQueue = DispatchQueue(label: "co.enix.ClawAntenna.connectivity")
-    // TODO: private var modelContext: ModelContext
+    private let modelContainer: ModelContainer
+    private var monitor: NWPathMonitor?
+    private let monitorQueue = DispatchQueue(label: "co.enix.ClawAntenna.connectivity")
 
     private(set) var isRunning = false
     var lastError: String?
 
     var isAvailable: Bool { true }
-
-    /// No permission needed for network path monitoring.
     var permissionStatus: CollectorPermissionStatus { .notRequired }
 
-    func requestPermission() {
-        // No-op — network monitoring requires no permission.
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
     }
 
-    func start() {
-        // TODO: monitor = NWPathMonitor()
-        // TODO: monitor?.pathUpdateHandler = { [weak self] path in
-        //     let networkType: String
-        //     if path.usesInterfaceType(.wifi) {
-        //         networkType = "wifi"
-        //     } else if path.usesInterfaceType(.cellular) {
-        //         networkType = "cellular"
-        //     } else if path.usesInterfaceType(.wiredEthernet) {
-        //         networkType = "wired"
-        //     } else {
-        //         networkType = "none"
-        //     }
-        //
-        //     let record = ConnectivityRecord(
-        //         networkType: networkType,
-        //         isExpensive: path.isExpensive,
-        //         isConstrained: path.isConstrained
-        //     )
-        //     // Insert on main actor
-        //     Task { @MainActor in
-        //         self?.modelContext.insert(record)
-        //         try? self?.modelContext.save()
-        //     }
-        // }
-        // TODO: monitor?.start(queue: monitorQueue)
+    func requestPermission() {}
 
+    func start() {
+        let m = NWPathMonitor()
+        m.pathUpdateHandler = { [weak self] path in
+            guard let self else { return }
+            let networkType: String
+            if path.usesInterfaceType(.wifi) {
+                networkType = "wifi"
+            } else if path.usesInterfaceType(.cellular) {
+                networkType = "cellular"
+            } else if path.usesInterfaceType(.wiredEthernet) {
+                networkType = "wired"
+            } else {
+                networkType = "none"
+            }
+
+            Task { @MainActor in
+                self.recordConnectivity(networkType: networkType, isExpensive: path.isExpensive, isConstrained: path.isConstrained)
+            }
+        }
+        m.start(queue: monitorQueue)
+        monitor = m
         isRunning = true
-        logger.info("TODO: Started connectivity monitoring")
+        logger.info("Started connectivity monitoring")
     }
 
     func stop() {
-        // TODO: monitor?.cancel()
-        // TODO: monitor = nil
+        monitor?.cancel()
+        monitor = nil
         isRunning = false
         logger.info("Stopped connectivity monitoring")
+    }
+
+    private func recordConnectivity(networkType: String, isExpensive: Bool, isConstrained: Bool) {
+        let context = ModelContext(modelContainer)
+        let record = ConnectivityRecord(networkType: networkType, isExpensive: isExpensive, isConstrained: isConstrained)
+        context.insert(record)
+        do {
+            try context.save()
+        } catch {
+            lastError = error.localizedDescription
+            logger.error("Failed to save connectivity record: \(error.localizedDescription)")
+        }
     }
 }

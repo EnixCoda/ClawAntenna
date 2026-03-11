@@ -1,12 +1,9 @@
 import Foundation
+import CoreMotion
+import SwiftData
 import os
 
-// TODO: import CoreMotion
-
 /// Collects barometric pressure and relative altitude using CMAltimeter.
-///
-/// Barometric data is useful for detecting elevation changes (stairs, hills)
-/// and correlating with weather patterns.
 @Observable
 final class AltimeterCollector: DataCollector {
     let id = "altimeter"
@@ -15,51 +12,76 @@ final class AltimeterCollector: DataCollector {
     let description = "Barometric pressure, relative altitude"
 
     private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "AltimeterCollector")
-
-    // TODO: private var altimeter: CMAltimeter?
-    // TODO: private var modelContext: ModelContext
+    private let modelContainer: ModelContainer
+    private var altimeter: CMAltimeter?
 
     private(set) var isRunning = false
     var lastError: String?
 
     var isAvailable: Bool {
-        // TODO: CMAltimeter.isRelativeAltitudeAvailable()
-        true
+        CMAltimeter.isRelativeAltitudeAvailable()
     }
 
     var permissionStatus: CollectorPermissionStatus {
-        // Altimeter uses the same motion permission as pedometer/activity.
-        // TODO: Check CMAltimeter.authorizationStatus()
-        .authorized
+        switch CMAltimeter.authorizationStatus() {
+        case .notDetermined: .notDetermined
+        case .restricted: .restricted
+        case .denied: .denied
+        case .authorized: .authorized
+        @unknown default: .notDetermined
+        }
+    }
+
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
     }
 
     func requestPermission() {
-        // TODO: Shared with CoreMotion — same permission as activity/pedometer.
-        logger.info("TODO: Request altimeter permission")
+        let a = CMAltimeter()
+        a.startRelativeAltitudeUpdates(to: .main) { _, _ in }
+        a.stopRelativeAltitudeUpdates()
     }
 
     func start() {
-        guard permissionStatus.isGranted || permissionStatus == .notDetermined else { return }
+        guard isAvailable else {
+            lastError = "Altimeter not available"
+            return
+        }
 
-        // TODO: altimeter = CMAltimeter()
-        // TODO: altimeter?.startRelativeAltitudeUpdates(to: .main) { data, error in
-        //     guard let data else { return }
-        //     let record = AltimeterRecord(
-        //         pressure: data.pressure.doubleValue,  // kPa
-        //         relativeAltitude: data.relativeAltitude.doubleValue  // meters
-        //     )
-        //     self.modelContext.insert(record)
-        //     try? self.modelContext.save()
-        // }
-
+        let a = CMAltimeter()
+        a.startRelativeAltitudeUpdates(to: .main) { [weak self] data, error in
+            guard let self else { return }
+            if let error {
+                self.lastError = error.localizedDescription
+                return
+            }
+            guard let data else { return }
+            self.handleAltimeterData(data)
+        }
+        altimeter = a
         isRunning = true
-        logger.info("TODO: Started altimeter updates")
+        logger.info("Started altimeter updates")
     }
 
     func stop() {
-        // TODO: altimeter?.stopRelativeAltitudeUpdates()
-        // TODO: altimeter = nil
+        altimeter?.stopRelativeAltitudeUpdates()
+        altimeter = nil
         isRunning = false
         logger.info("Stopped altimeter updates")
+    }
+
+    private func handleAltimeterData(_ data: CMAltitudeData) {
+        let context = ModelContext(modelContainer)
+        let record = AltimeterRecord(
+            pressure: data.pressure.doubleValue,
+            relativeAltitude: data.relativeAltitude.doubleValue
+        )
+        context.insert(record)
+        do {
+            try context.save()
+        } catch {
+            lastError = error.localizedDescription
+            logger.error("Failed to save altimeter record: \(error.localizedDescription)")
+        }
     }
 }

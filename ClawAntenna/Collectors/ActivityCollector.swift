@@ -1,12 +1,9 @@
 import Foundation
+import CoreMotion
+import SwiftData
 import os
 
-// TODO: import CoreMotion
-
 /// Detects the user's current activity type using CMMotionActivityManager.
-///
-/// Activity types: stationary, walking, running, cycling, automotive, unknown.
-/// CoreMotion activity detection runs on the motion coprocessor and is very battery-efficient.
 @Observable
 final class ActivityCollector: DataCollector {
     let id = "activity"
@@ -15,56 +12,82 @@ final class ActivityCollector: DataCollector {
     let description = "Stationary, walking, running, cycling, driving"
 
     private let logger = Logger(subsystem: "co.enix.ClawAntenna", category: "ActivityCollector")
-
-    // TODO: private var activityManager: CMMotionActivityManager?
-    // TODO: private var modelContext: ModelContext
+    private let modelContainer: ModelContainer
+    private var activityManager: CMMotionActivityManager?
 
     private(set) var isRunning = false
     var lastError: String?
 
     var isAvailable: Bool {
-        // TODO: CMMotionActivityManager.isActivityAvailable()
-        true
+        CMMotionActivityManager.isActivityAvailable()
     }
 
     var permissionStatus: CollectorPermissionStatus {
-        // TODO: Check CMMotionActivityManager.authorizationStatus()
-        .authorized
+        switch CMMotionActivityManager.authorizationStatus() {
+        case .notDetermined: .notDetermined
+        case .restricted: .restricted
+        case .denied: .denied
+        case .authorized: .authorized
+        @unknown default: .notDetermined
+        }
+    }
+
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
     }
 
     func requestPermission() {
-        // TODO: Trigger a one-time query to prompt the motion permission dialog.
-        // CMMotionActivityManager doesn't have an explicit requestPermission(),
-        // so starting a query triggers the system prompt.
-        logger.info("TODO: Request motion permission")
+        let manager = CMMotionActivityManager()
+        manager.queryActivityStarting(from: Date(), to: Date(), to: .main) { _, _ in }
     }
 
     func start() {
-        guard permissionStatus.isGranted || permissionStatus == .notDetermined else {
-            logger.warning("Cannot start without motion permission")
+        guard isAvailable else {
+            lastError = "Activity detection not available"
             return
         }
 
-        // TODO: activityManager = CMMotionActivityManager()
-        // TODO: activityManager?.startActivityUpdates(to: .main) { activity in
-        //     guard let activity else { return }
-        //     let record = ActivityRecord(
-        //         activityType: self.classifyActivity(activity),
-        //         confidence: self.classifyConfidence(activity.confidence),
-        //         startedAt: activity.startDate
-        //     )
-        //     self.modelContext.insert(record)
-        //     try? self.modelContext.save()
-        // }
-
+        let manager = CMMotionActivityManager()
+        manager.startActivityUpdates(to: .main) { [weak self] activity in
+            guard let activity, let self else { return }
+            self.handleActivity(activity)
+        }
+        activityManager = manager
         isRunning = true
-        logger.info("TODO: Started activity monitoring")
+        logger.info("Started activity monitoring")
     }
 
     func stop() {
-        // TODO: activityManager?.stopActivityUpdates()
-        // TODO: activityManager = nil
+        activityManager?.stopActivityUpdates()
+        activityManager = nil
         isRunning = false
         logger.info("Stopped activity monitoring")
+    }
+
+    private func handleActivity(_ activity: CMMotionActivity) {
+        let type: String
+        if activity.automotive { type = "automotive" }
+        else if activity.cycling { type = "cycling" }
+        else if activity.running { type = "running" }
+        else if activity.walking { type = "walking" }
+        else if activity.stationary { type = "stationary" }
+        else { type = "unknown" }
+
+        let confidence: String = switch activity.confidence {
+        case .low: "low"
+        case .medium: "medium"
+        case .high: "high"
+        @unknown default: "unknown"
+        }
+
+        let context = ModelContext(modelContainer)
+        let record = ActivityRecord(activityType: type, confidence: confidence, startedAt: activity.startDate)
+        context.insert(record)
+        do {
+            try context.save()
+        } catch {
+            lastError = error.localizedDescription
+            logger.error("Failed to save activity record: \(error.localizedDescription)")
+        }
     }
 }

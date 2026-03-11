@@ -15,7 +15,7 @@ final class UploadService {
         self.settings = settings
     }
 
-    /// Uploads all pending records to Supabase. Marks them as uploaded on success.
+    /// Uploads all pending records across all collector types to Supabase.
     @MainActor
     func uploadPendingRecords(modelContext: ModelContext) async {
         guard settings.isConfigured else {
@@ -31,23 +31,39 @@ final class UploadService {
         isUploading = true
         defer { isUploading = false }
 
+        await uploadBatch(fetchPending(LocationRecord.self, from: modelContext), table: LocationRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(ActivityRecord.self, from: modelContext), table: ActivityRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(PedometerRecord.self, from: modelContext), table: PedometerRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(AltimeterRecord.self, from: modelContext), table: AltimeterRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(BatteryRecord.self, from: modelContext), table: BatteryRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(ConnectivityRecord.self, from: modelContext), table: ConnectivityRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(HealthRecord.self, from: modelContext), table: HealthRecord.supabaseTable, modelContext: modelContext)
+    }
+
+    // MARK: - Private
+
+    private func fetchPending<T: PersistentModel & Uploadable>(_ type: T.Type, from modelContext: ModelContext) -> [T] {
+        var descriptor = FetchDescriptor<T>()
+        descriptor.fetchLimit = 200
+        guard let all = try? modelContext.fetch(descriptor) else { return [] }
+        return all.filter {
+            ($0.uploadStatus == UploadStatus.pending.rawValue || $0.uploadStatus == UploadStatus.failed.rawValue)
+            && $0.uploadAttempts < 5
+        }
+    }
+
+    private func uploadBatch<T: PersistentModel & Uploadable>(_ records: [T], table: String, modelContext: ModelContext) async {
+        guard !records.isEmpty else { return }
+
+        logger.info("Uploading \(records.count) \(table) records")
+
+        for record in records {
+            record.uploadStatus = UploadStatus.uploading.rawValue
+        }
+        try? modelContext.save()
+
         do {
-            let pending = try fetchPendingRecords(modelContext: modelContext)
-            guard !pending.isEmpty else {
-                logger.info("No pending records to upload")
-                return
-            }
-
-            logger.info("Uploading \(pending.count) pending records")
-
-            // Mark as uploading
-            for record in pending {
-                record.status = .uploading
-            }
-            try modelContext.save()
-
-            // Build request
-            let request = try buildRequest(records: pending)
+            let request = try buildRequest(records: records, table: table)
             let (_, response) = try await session.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
@@ -55,64 +71,32 @@ final class UploadService {
             }
 
             if (200...299).contains(httpResponse.statusCode) {
-                // Success — mark as uploaded
-                for record in pending {
-                    record.status = .uploaded
+                for record in records {
+                    record.uploadStatus = UploadStatus.uploaded.rawValue
                 }
                 settings.lastUploadDate = Date()
                 lastError = nil
-                logger.info("Successfully uploaded \(pending.count) records")
+                logger.info("Successfully uploaded \(records.count) \(table) records")
             } else {
                 throw UploadError.httpError(httpResponse.statusCode)
             }
 
             try modelContext.save()
         } catch {
-            logger.error("Upload failed: \(error.localizedDescription)")
+            logger.error("Upload failed for \(table): \(error.localizedDescription)")
             lastError = error.localizedDescription
 
-            // Mark failed records for retry
-            if let pending = try? fetchUploadingRecords(modelContext: modelContext) {
-                for record in pending {
-                    record.status = .failed
-                    record.uploadAttempts += 1
-                    record.lastUploadAttempt = Date()
-                }
-                try? modelContext.save()
+            for record in records {
+                record.uploadStatus = UploadStatus.failed.rawValue
+                record.uploadAttempts += 1
+                record.lastUploadAttempt = Date()
             }
+            try? modelContext.save()
         }
     }
 
-    // MARK: - Private
-
-    private func fetchPendingRecords(modelContext: ModelContext) throws -> [LocationRecord] {
-        let pendingValue = UploadStatus.pending.rawValue
-        let failedValue = UploadStatus.failed.rawValue
-        let maxAttempts = 5
-
-        let descriptor = FetchDescriptor<LocationRecord>(
-            predicate: #Predicate<LocationRecord> {
-                ($0.uploadStatus == pendingValue || $0.uploadStatus == failedValue)
-                && $0.uploadAttempts < maxAttempts
-            },
-            sortBy: [SortDescriptor(\.recordedAt)]
-        )
-
-        return try modelContext.fetch(descriptor)
-    }
-
-    private func fetchUploadingRecords(modelContext: ModelContext) throws -> [LocationRecord] {
-        let uploadingValue = UploadStatus.uploading.rawValue
-        let descriptor = FetchDescriptor<LocationRecord>(
-            predicate: #Predicate<LocationRecord> {
-                $0.uploadStatus == uploadingValue
-            }
-        )
-        return try modelContext.fetch(descriptor)
-    }
-
-    private func buildRequest(records: [LocationRecord]) throws -> URLRequest {
-        guard let url = URL(string: "\(settings.supabaseURL)/rest/v1/locations") else {
+    private func buildRequest<T: Uploadable>(records: [T], table: String) throws -> URLRequest {
+        guard let url = URL(string: "\(settings.supabaseURL)/rest/v1/\(table)") else {
             throw UploadError.invalidURL
         }
 
@@ -121,8 +105,7 @@ final class UploadService {
         request.setValue(settings.supabaseAPIKey, forHTTPHeaderField: "apikey")
         request.setValue("Bearer \(settings.supabaseAPIKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
-        request.setValue("ignore-duplicates", forHTTPHeaderField: "Prefer")
+        request.setValue("return=minimal,resolution=ignore-duplicates", forHTTPHeaderField: "Prefer")
 
         let payload = records.map { $0.toSupabaseJSON() }
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)

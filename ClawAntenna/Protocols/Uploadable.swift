@@ -4,7 +4,7 @@ import Foundation
 ///
 /// All record models conform to this protocol so that the UploadService
 /// can handle them generically.
-protocol Uploadable {
+protocol Uploadable: AnyObject {
     /// The Supabase table this record uploads to (e.g., "locations", "pedometer").
     static var supabaseTable: String { get }
 

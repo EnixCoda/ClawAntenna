@@ -53,10 +53,10 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 │  │  Location     │ "Where was I  │  WhatsApp · Telegram   │  │
 │  │  Motion       │  last Tuesday │  iMessage · Slack      │  │
 │  │  Steps        │  at 3pm?"     │  Discord · Signal      │  │
-│  │  Health       │               │  ...20+ channels       │  │
+│  │  Compass      │               │  ...20+ channels       │  │
 │  │  Battery      │ ──────────▶   │                        │  │
-│  │  Network      │ Answers with  │  Skills · Memory       │  │
-│  │               │ YOUR data     │  Voice · Canvas        │  │
+│  │  Noise        │ Answers with  │  Skills · Memory       │  │
+│  │  ...15 total  │ YOUR data     │  Voice · Canvas        │  │
 │  └───────────────┘               └────────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -69,8 +69,11 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 | *"How active was I this week?"* | Step count, distance, activity types |
 | *"What's my average commute time?"* | Location patterns + motion data |
 | *"Did I sleep well last night?"* | HealthKit sleep analysis |
-| *"How much time did I spend at the office?"* | Location dwell times |
+| *"How much time did I spend at the office?"* | Visit detection dwell times |
 | *"Am I more active on weekdays or weekends?"* | Pedometer + activity trends |
+| *"Is my phone overheating a lot lately?"* | Thermal state history |
+| *"How loud was it at that concert?"* | Ambient noise level logs |
+| *"What song was playing when I was at the park?"* | Now-playing + location join |
 
 OpenClaw can query ClawAntenna's Supabase tables — giving it full SQL access to your physical-world data. See [Connect to OpenClaw](#-connect-to-openclaw) for setup instructions.
 
@@ -80,19 +83,35 @@ OpenClaw can query ClawAntenna's Supabase tables — giving it full SQL access t
 
 ## 📡 Data Sources
 
+### Active Collectors
+
 | | Collector | Framework | What it captures | Status |
 |:---:|-----------|-----------|------------------|:------:|
 | 📍 | **Location** | CoreLocation | GPS coordinates, altitude, speed, accuracy | ✅ |
-| 🚶 | **Activity** | CoreMotion | Stationary · Walking · Running · Cycling · Driving | 🔜 |
-| 👟 | **Pedometer** | CoreMotion | Steps, distance, floors climbed, cadence | 🔜 |
-| 🌡️ | **Altimeter** | CoreMotion | Barometric pressure, relative altitude | 🔜 |
-| 🔋 | **Battery** | UIKit | Battery level and charging state | 🔜 |
-| 📶 | **Connectivity** | Network | Wi-Fi / Cellular / None, connection quality | 🔜 |
-| ❤️ | **Health** | HealthKit | Heart rate, energy burned, sleep, workouts | ⏸️ * |
+| 🚶 | **Activity** | CoreMotion | Stationary · Walking · Running · Cycling · Driving | ✅ |
+| 👟 | **Pedometer** | CoreMotion | Steps, distance, floors climbed, cadence | ✅ |
+| 🌡️ | **Altimeter** | CoreMotion | Barometric pressure, relative altitude | ✅ |
+| 🔋 | **Battery** | UIKit | Battery level and charging state | ✅ |
+| 📶 | **Connectivity** | Network | Wi-Fi / Cellular / None, connection quality | ✅ |
 
-\* *Health collector requires a HealthKit entitlement that must be approved by Apple. Code is implemented but disabled by default.*
+### Planned Collectors
 
-Each collector runs independently, can be toggled on/off, and uploads to its own Supabase table.
+| | Collector | Framework | What it captures | Permission |
+|:---:|-----------|-----------|------------------|:----------:|
+| 📍 | **Visits** | CoreLocation | Automatic place arrival / departure detection | Location ¹ |
+| 🧭 | **Compass** | CoreLocation | Heading direction, magnetic / true north | Location ¹ |
+| 🌡️ | **Thermal** | ProcessInfo | Device thermal state (nominal → critical) | None |
+| 🔆 | **Brightness** | UIKit | Screen brightness level (0–100 %) | None |
+| 💾 | **Storage** | FileManager | Available / total disk space | None |
+| 🔊 | **Noise** | AVAudioEngine | Ambient sound level in decibels | Microphone |
+| 📡 | **Bluetooth** | CoreBluetooth | Nearby BLE peripherals (name, signal strength) | Bluetooth |
+| 🎵 | **Now Playing** | MediaPlayer | Currently playing track, artist, album | None |
+| ❤️ | **Health** | HealthKit | Heart rate, energy burned, sleep, workouts | HealthKit ² |
+
+¹ *Reuses existing location permission — no additional prompt.*
+² *Requires a HealthKit entitlement that must be approved by Apple. Code is implemented but disabled by default.*
+
+Every collector runs independently, can be toggled on/off, and uploads to its own Supabase table.
 
 ---
 
@@ -185,7 +204,7 @@ CREATE TABLE connectivity (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ❤️ Health data
+-- ❤️ Health data (requires HealthKit entitlement)
 CREATE TABLE health (
   id UUID PRIMARY KEY,
   metric_type TEXT NOT NULL,
@@ -197,9 +216,104 @@ CREATE TABLE health (
   recorded_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 📍 Visit detection (auto place arrival/departure)
+CREATE TABLE visits (
+  id UUID PRIMARY KEY,
+  latitude DOUBLE PRECISION NOT NULL,
+  longitude DOUBLE PRECISION NOT NULL,
+  horizontal_accuracy DOUBLE PRECISION,
+  arrival_at TIMESTAMPTZ,
+  departure_at TIMESTAMPTZ,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 🧭 Compass heading
+CREATE TABLE compass (
+  id UUID PRIMARY KEY,
+  magnetic_heading DOUBLE PRECISION NOT NULL,
+  true_heading DOUBLE PRECISION,
+  heading_accuracy DOUBLE PRECISION,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 🌡️ Thermal state
+CREATE TABLE thermal (
+  id UUID PRIMARY KEY,
+  state TEXT NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 🔆 Screen brightness
+CREATE TABLE brightness (
+  id UUID PRIMARY KEY,
+  level DOUBLE PRECISION NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 💾 Storage usage
+CREATE TABLE storage (
+  id UUID PRIMARY KEY,
+  total_bytes BIGINT NOT NULL,
+  available_bytes BIGINT NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 🔊 Ambient noise level
+CREATE TABLE noise (
+  id UUID PRIMARY KEY,
+  decibels DOUBLE PRECISION NOT NULL,
+  peak_decibels DOUBLE PRECISION,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 📡 Bluetooth peripherals
+CREATE TABLE bluetooth (
+  id UUID PRIMARY KEY,
+  peripheral_name TEXT,
+  peripheral_uuid TEXT NOT NULL,
+  rssi INT NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 🎵 Now playing media
+CREATE TABLE now_playing (
+  id UUID PRIMARY KEY,
+  title TEXT,
+  artist TEXT,
+  album TEXT,
+  playback_duration DOUBLE PRECISION,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 ```
 
-Then enable **Row Level Security (RLS)** and create INSERT policies for the secret key on each table.
+Then enable **Row Level Security (RLS)** on each table:
+
+```sql
+ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pedometer ENABLE ROW LEVEL SECURITY;
+ALTER TABLE altimeter ENABLE ROW LEVEL SECURITY;
+ALTER TABLE battery ENABLE ROW LEVEL SECURITY;
+ALTER TABLE connectivity ENABLE ROW LEVEL SECURITY;
+ALTER TABLE health ENABLE ROW LEVEL SECURITY;
+ALTER TABLE visits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE compass ENABLE ROW LEVEL SECURITY;
+ALTER TABLE thermal ENABLE ROW LEVEL SECURITY;
+ALTER TABLE brightness ENABLE ROW LEVEL SECURITY;
+ALTER TABLE storage ENABLE ROW LEVEL SECURITY;
+ALTER TABLE noise ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bluetooth ENABLE ROW LEVEL SECURITY;
+ALTER TABLE now_playing ENABLE ROW LEVEL SECURITY;
+```
 
 </details>
 
@@ -256,8 +370,9 @@ Headers:
 > *"Where was I last Tuesday afternoon?"*
 > *"How many steps did I take this week?"*
 > *"What was I doing this morning — walking, driving, or at my desk?"*
-> *"Did I sleep well last night?"*
+> *"How loud was it at last night's dinner?"*
 > *"How much time did I spend at the office this week?"*
+> *"What song was playing when I was at the park?"*
 
 OpenClaw queries the Supabase tables ClawAntenna populates and answers with your real data — no manual logging needed.
 
@@ -266,7 +381,7 @@ OpenClaw queries the Supabase tables ClawAntenna populates and answers with your
 ## ✨ Features
 
 ### 🔋 Battery-first
-Collectors use system-triggered events — significant location changes, motion coprocessor updates, HealthKit background delivery — instead of GPS polling or timers. Your battery barely notices.
+Collectors use system-triggered events — significant location changes, motion coprocessor updates, visit monitoring — instead of GPS polling or timers. Your battery barely notices.
 
 ### 📴 Offline-first
 All records are buffered locally with SwiftData. No signal? No problem. ClawAntenna syncs everything when connectivity returns.
@@ -289,13 +404,12 @@ Failed uploads are retried up to 5 times with exponential backoff tracking. Noth
 
 ```mermaid
 flowchart TB
-    subgraph Collectors["📱 Collectors"]
+    subgraph Collectors["📱 Collectors (15 data sources)"]
         direction LR
-        L["📍 Location"]
-        M["🚶 Motion"]
-        P["👟 Pedometer"]
-        B["🔋 Battery"]
-        H["❤️ Health"]
+        L["📍 Location\n& Visits"]
+        M["🚶 Motion\n& Pedometer"]
+        D["🔋 Device\nState"]
+        E["🔊 Environ-\nment"]
     end
 
     subgraph Local["💾 Local Storage"]
@@ -304,10 +418,10 @@ flowchart TB
 
     subgraph Cloud["☁️ Supabase"]
         API["REST API\n(PostgREST)"]
-        DB["PostgreSQL\nlocations · activities\npedometer · health · …"]
+        DB["PostgreSQL\n15 tables"]
     end
 
-    L & M & P & B & H --> SD
+    L & M & D & E --> SD
     SD -->|"Batch POST\nRetry · Idempotent"| API
     API --> DB
 ```
@@ -325,10 +439,14 @@ Records that fail to upload are retried automatically (up to 5 attempts). UUID p
 | Phase | Focus | Description |
 |:-----:|-------|-------------|
 | **1** | ✅ Architecture | `DataCollector` protocol, modular collector system, generalized upload pipeline |
-| **2** | 🚶 Motion & Activity | Activity type detection, pedometer (steps/distance/floors), barometric altitude |
-| **3** | 📱 Device Context | Battery level & charging state, network connectivity monitoring |
-| **4** | ⏸️ Health | HealthKit integration — requires Apple-approved entitlement; code ready but disabled by default |
-| **5** | 🧠 Intelligence | Automatic trip detection, data export (CSV/JSON), dashboard charts & visualizations |
+| **2** | ✅ Motion & Activity | Activity type detection, pedometer (steps/distance/floors), barometric altitude |
+| **3** | ✅ Device Context | Battery level & charging state, network connectivity monitoring |
+| **4** | 📍 Location+ | Visit detection (auto place arrival/departure), compass heading |
+| **5** | 📱 Device State | Thermal state, screen brightness, storage usage |
+| **6** | 🔊 Environment | Ambient noise level metering, Bluetooth peripheral scanning |
+| **7** | 🎵 Media | Now-playing track detection |
+| **8** | ⏸️ Health | HealthKit integration — requires Apple-approved entitlement; code ready but disabled |
+| **9** | 🧠 Intelligence | Automatic trip detection, data export (CSV/JSON), dashboard charts & visualizations |
 
 ---
 
@@ -346,11 +464,12 @@ git push origin feat/awesome-collector
 ```
 
 **Ideas for contributions:**
-- 🆕 New collector (Bluetooth, NFC, screen time, …)
+- 🆕 New collector (see [Planned Collectors](#planned-collectors) above)
 - 🦞 OpenClaw skill for querying ClawAntenna data in natural language
 - 📊 Grafana dashboard templates for the Supabase data
 - 🧪 Unit tests for upload retry logic
 - 📱 Widget extension for quick status glance
+- 🗺️ Location heatmap visualization
 
 ---
 

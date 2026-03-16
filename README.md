@@ -116,10 +116,17 @@ OpenClaw can query ClawAntenna's Supabase tables — giving it full SQL access t
 | 📐 | **Accelerometer** | CoreMotion | Raw motion intensity, shake detection | Motion ¹ |
 | 📸 | **Photo Activity** | PhotoKit | Photo count, last capture timestamp | Photos |
 | 📅 | **Calendar** | EventKit | Free/busy status, event count | Calendar |
-| ❤️ | **Health** | HealthKit | Heart rate, energy burned, sleep, workouts | HealthKit ² |
+| ⚡ | **Low Power Mode** | ProcessInfo | Low power mode on/off transitions | None |
+| ⏱️ | **Uptime** | ProcessInfo | Device uptime / last reboot | None |
+| 📲 | **App Lifecycle** | UIKit | Foreground/background transitions (phone pickups) | None |
+| 📍 | **Geofence** | CoreLocation | Region enter/exit events | Location ¹ |
+| 📱 | **NFC Tags** | CoreNFC | NFC tag scanning | NFC ³ |
+| 📶 | **Wi-Fi SSID** | NetworkExtension | Connected Wi-Fi network name | Entitlement ³ |
+| ❤️ | **Health** | HealthKit | Heart rate, energy burned, sleep, workouts | HealthKit ³ |
 
-¹ *Reuses existing motion permission — no additional prompt.*
+¹ *Reuses existing permission — no additional prompt.*
 ² *Requires a HealthKit entitlement that must be approved by Apple. Code is implemented but disabled by default.*
+³ *Requires a special entitlement from Apple.*
 
 Every collector runs independently, can be toggled on/off, and uploads to its own Supabase table.
 
@@ -456,10 +463,12 @@ Records that fail to upload are retried automatically (up to 5 attempts). UUID p
 | **6** | ✅ Environment | Ambient noise level metering, Bluetooth peripheral scanning |
 | **7** | ✅ Media | Now-playing track detection |
 | **8** | 📱 Device Awareness | Orientation, proximity, screen lock/unlock, dark mode, cellular radio info |
-| **9** | 🌍 Context | Timezone changes, memory pressure, accelerometer motion intensity |
-| **10** | 📸 Personal Data | Photo activity, calendar free/busy (new permissions) |
-| **11** | ⏸️ Health | HealthKit integration — requires Apple-approved entitlement; code ready but disabled |
-| **12** | 🧠 Intelligence | Automatic trip detection, data export (CSV/JSON), dashboard charts & visualizations |
+| **9** | ⚡ System State | Low power mode, device uptime, app lifecycle (phone pickup frequency) |
+| **10** | 🌍 Context | Timezone changes, memory pressure, accelerometer motion intensity |
+| **11** | 📍 Location+ | Geofence region enter/exit events |
+| **12** | 📸 Personal Data | Photo activity, calendar free/busy (new permissions) |
+| **13** | 🔒 Entitlements | NFC tag scanning, Wi-Fi SSID, HealthKit — require Apple-approved entitlements |
+| **14** | 🧠 Intelligence | Automatic trip detection, data export (CSV/JSON), dashboard charts & visualizations |
 
 ---
 

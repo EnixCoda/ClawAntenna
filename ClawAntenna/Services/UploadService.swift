@@ -37,6 +37,14 @@ final class UploadService {
         await uploadBatch(fetchPending(AltimeterRecord.self, from: modelContext), table: AltimeterRecord.supabaseTable, modelContext: modelContext)
         await uploadBatch(fetchPending(BatteryRecord.self, from: modelContext), table: BatteryRecord.supabaseTable, modelContext: modelContext)
         await uploadBatch(fetchPending(ConnectivityRecord.self, from: modelContext), table: ConnectivityRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(VisitRecord.self, from: modelContext), table: VisitRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(CompassRecord.self, from: modelContext), table: CompassRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(ThermalRecord.self, from: modelContext), table: ThermalRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(BrightnessRecord.self, from: modelContext), table: BrightnessRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(StorageRecord.self, from: modelContext), table: StorageRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(NoiseRecord.self, from: modelContext), table: NoiseRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(BluetoothRecord.self, from: modelContext), table: BluetoothRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(NowPlayingRecord.self, from: modelContext), table: NowPlayingRecord.supabaseTable, modelContext: modelContext)
         // HealthRecord upload disabled — HealthKit entitlement requires Apple approval
         // await uploadBatch(fetchPending(HealthRecord.self, from: modelContext), table: HealthRecord.supabaseTable, modelContext: modelContext)
     }

@@ -15,6 +15,14 @@ final class CollectorManager {
     let altimeter: AltimeterCollector
     let battery: BatteryCollector
     let connectivity: ConnectivityCollector
+    let visits: VisitCollector
+    let compass: CompassCollector
+    let thermal: ThermalCollector
+    let brightness: BrightnessCollector
+    let storage: StorageCollector
+    let noise: NoiseCollector
+    let bluetooth: BluetoothCollector
+    let nowPlaying: NowPlayingCollector
     // Health collector requires a HealthKit entitlement that needs Apple approval.
     // Kept in code but excluded from the active collector list for now.
     // let health: HealthCollector
@@ -26,6 +34,14 @@ final class CollectorManager {
         let altimeter = AltimeterCollector(modelContainer: modelContainer)
         let battery = BatteryCollector(modelContainer: modelContainer)
         let connectivity = ConnectivityCollector(modelContainer: modelContainer)
+        let visits = VisitCollector(locationManager: locationManager, modelContainer: modelContainer)
+        let compass = CompassCollector(locationManager: locationManager, modelContainer: modelContainer)
+        let thermal = ThermalCollector(modelContainer: modelContainer)
+        let brightness = BrightnessCollector(modelContainer: modelContainer)
+        let storage = StorageCollector(modelContainer: modelContainer)
+        let noise = NoiseCollector(modelContainer: modelContainer)
+        let bluetooth = BluetoothCollector(modelContainer: modelContainer)
+        let nowPlaying = NowPlayingCollector(modelContainer: modelContainer)
 
         self.location = location
         self.activity = activity
@@ -33,8 +49,19 @@ final class CollectorManager {
         self.altimeter = altimeter
         self.battery = battery
         self.connectivity = connectivity
+        self.visits = visits
+        self.compass = compass
+        self.thermal = thermal
+        self.brightness = brightness
+        self.storage = storage
+        self.noise = noise
+        self.bluetooth = bluetooth
+        self.nowPlaying = nowPlaying
 
-        self.collectors = [location, activity, pedometer, altimeter, battery, connectivity]
+        self.collectors = [
+            location, activity, pedometer, altimeter, battery, connectivity,
+            visits, compass, thermal, brightness, storage, noise, bluetooth, nowPlaying
+        ]
     }
 
     func startEnabled(settings: AppSettings) {

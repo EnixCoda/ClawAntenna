@@ -8,5 +8,9 @@
 </array>
 <key>NSMotionUsageDescription</key>
 <string>ClawAntenna uses motion data to detect your activity type, count steps, and measure altitude changes.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>ClawAntenna measures ambient noise levels in decibels. No audio is recorded or stored.</string>
+<key>NSBluetoothAlwaysUsageDescription</key>
+<string>ClawAntenna scans for nearby Bluetooth devices to log their presence and signal strength.</string>
 </dict>
 </plist>

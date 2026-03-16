@@ -56,7 +56,7 @@ ClawAntenna gives OpenClaw physical-world awareness — passively collecting sen
 │  │  Compass      │               │  ...20+ channels       │  │
 │  │  Battery      │ ──────────▶   │                        │  │
 │  │  Noise        │ Answers with  │  Skills · Memory       │  │
-│  │  ...15 total  │ YOUR data     │  Voice · Canvas        │  │
+│  │  ...14 active  │ YOUR data     │  Voice · Canvas        │  │
 │  └───────────────┘               └────────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -93,22 +93,32 @@ OpenClaw can query ClawAntenna's Supabase tables — giving it full SQL access t
 | 🌡️ | **Altimeter** | CoreMotion | Barometric pressure, relative altitude | ✅ |
 | 🔋 | **Battery** | UIKit | Battery level and charging state | ✅ |
 | 📶 | **Connectivity** | Network | Wi-Fi / Cellular / None, connection quality | ✅ |
+| 📍 | **Visits** | CoreLocation | Automatic place arrival / departure detection | ✅ |
+| 🧭 | **Compass** | CoreLocation | Heading direction, magnetic / true north | ✅ |
+| 🌡️ | **Thermal** | ProcessInfo | Device thermal state (nominal → critical) | ✅ |
+| 🔆 | **Brightness** | UIKit | Screen brightness level (0–100 %) | ✅ |
+| 💾 | **Storage** | FileManager | Available / total disk space | ✅ |
+| 🔊 | **Noise** | AVAudioEngine | Ambient sound level in decibels | ✅ |
+| 📡 | **Bluetooth** | CoreBluetooth | Nearby BLE peripherals (name, signal strength) | ✅ |
+| 🎵 | **Now Playing** | MediaPlayer | Currently playing track, artist, album | ✅ |
 
 ### Planned Collectors
 
 | | Collector | Framework | What it captures | Permission |
 |:---:|-----------|-----------|------------------|:----------:|
-| 📍 | **Visits** | CoreLocation | Automatic place arrival / departure detection | Location ¹ |
-| 🧭 | **Compass** | CoreLocation | Heading direction, magnetic / true north | Location ¹ |
-| 🌡️ | **Thermal** | ProcessInfo | Device thermal state (nominal → critical) | None |
-| 🔆 | **Brightness** | UIKit | Screen brightness level (0–100 %) | None |
-| 💾 | **Storage** | FileManager | Available / total disk space | None |
-| 🔊 | **Noise** | AVAudioEngine | Ambient sound level in decibels | Microphone |
-| 📡 | **Bluetooth** | CoreBluetooth | Nearby BLE peripherals (name, signal strength) | Bluetooth |
-| 🎵 | **Now Playing** | MediaPlayer | Currently playing track, artist, album | None |
+| 📱 | **Orientation** | UIKit | Face up/down, portrait/landscape | None |
+| 👋 | **Proximity** | UIKit | Phone near face / in pocket | None |
+| 🔒 | **Screen Lock** | Darwin | Lock / unlock events | None |
+| 🌙 | **Appearance** | UIKit | Dark mode / light mode changes | None |
+| 📶 | **Cellular** | CoreTelephony | Carrier name, radio type (5G/LTE/3G) | None |
+| 🌍 | **Timezone** | Foundation | Timezone changes (travel detection) | None |
+| 🧠 | **Memory** | os | Available RAM / memory pressure | None |
+| 📐 | **Accelerometer** | CoreMotion | Raw motion intensity, shake detection | Motion ¹ |
+| 📸 | **Photo Activity** | PhotoKit | Photo count, last capture timestamp | Photos |
+| 📅 | **Calendar** | EventKit | Free/busy status, event count | Calendar |
 | ❤️ | **Health** | HealthKit | Heart rate, energy burned, sleep, workouts | HealthKit ² |
 
-¹ *Reuses existing location permission — no additional prompt.*
+¹ *Reuses existing motion permission — no additional prompt.*
 ² *Requires a HealthKit entitlement that must be approved by Apple. Code is implemented but disabled by default.*
 
 Every collector runs independently, can be toggled on/off, and uploads to its own Supabase table.
@@ -404,7 +414,7 @@ Failed uploads are retried up to 5 times with exponential backoff tracking. Noth
 
 ```mermaid
 flowchart TB
-    subgraph Collectors["📱 Collectors (15 data sources)"]
+    subgraph Collectors["📱 Collectors (14 active + 11 planned)"]
         direction LR
         L["📍 Location\n& Visits"]
         M["🚶 Motion\n& Pedometer"]
@@ -418,7 +428,7 @@ flowchart TB
 
     subgraph Cloud["☁️ Supabase"]
         API["REST API\n(PostgREST)"]
-        DB["PostgreSQL\n15 tables"]
+        DB["PostgreSQL\n25 tables"]
     end
 
     L & M & D & E --> SD
@@ -441,12 +451,15 @@ Records that fail to upload are retried automatically (up to 5 attempts). UUID p
 | **1** | ✅ Architecture | `DataCollector` protocol, modular collector system, generalized upload pipeline |
 | **2** | ✅ Motion & Activity | Activity type detection, pedometer (steps/distance/floors), barometric altitude |
 | **3** | ✅ Device Context | Battery level & charging state, network connectivity monitoring |
-| **4** | 📍 Location+ | Visit detection (auto place arrival/departure), compass heading |
-| **5** | 📱 Device State | Thermal state, screen brightness, storage usage |
-| **6** | 🔊 Environment | Ambient noise level metering, Bluetooth peripheral scanning |
-| **7** | 🎵 Media | Now-playing track detection |
-| **8** | ⏸️ Health | HealthKit integration — requires Apple-approved entitlement; code ready but disabled |
-| **9** | 🧠 Intelligence | Automatic trip detection, data export (CSV/JSON), dashboard charts & visualizations |
+| **4** | ✅ Location+ | Visit detection (auto place arrival/departure), compass heading |
+| **5** | ✅ Device State | Thermal state, screen brightness, storage usage |
+| **6** | ✅ Environment | Ambient noise level metering, Bluetooth peripheral scanning |
+| **7** | ✅ Media | Now-playing track detection |
+| **8** | 📱 Device Awareness | Orientation, proximity, screen lock/unlock, dark mode, cellular radio info |
+| **9** | 🌍 Context | Timezone changes, memory pressure, accelerometer motion intensity |
+| **10** | 📸 Personal Data | Photo activity, calendar free/busy (new permissions) |
+| **11** | ⏸️ Health | HealthKit integration — requires Apple-approved entitlement; code ready but disabled |
+| **12** | 🧠 Intelligence | Automatic trip detection, data export (CSV/JSON), dashboard charts & visualizations |
 
 ---
 

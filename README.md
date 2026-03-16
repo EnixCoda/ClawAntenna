@@ -106,7 +106,6 @@ OpenClaw can query ClawAntenna's Supabase tables — giving it full SQL access t
 
 | | Collector | Framework | What it captures | Permission |
 |:---:|-----------|-----------|------------------|:----------:|
-| 📱 | **Orientation** | UIKit | Face up/down, portrait/landscape | None |
 | 👋 | **Proximity** | UIKit | Phone near face / in pocket | None |
 | 🔒 | **Screen Lock** | Darwin | Lock / unlock events | None |
 | 🌙 | **Appearance** | UIKit | Dark mode / light mode changes | None |
@@ -462,7 +461,7 @@ Records that fail to upload are retried automatically (up to 5 attempts). UUID p
 | **5** | ✅ Device State | Thermal state, screen brightness, storage usage |
 | **6** | ✅ Environment | Ambient noise level metering, Bluetooth peripheral scanning |
 | **7** | ✅ Media | Now-playing track detection |
-| **8** | 📱 Device Awareness | Orientation, proximity, screen lock/unlock, dark mode, cellular radio info |
+| **8** | 📱 Device Awareness | Proximity, screen lock/unlock, dark mode, cellular radio info |
 | **9** | ⚡ System State | Low power mode, device uptime, app lifecycle (phone pickup frequency) |
 | **10** | 🌍 Context | Timezone changes, memory pressure, accelerometer motion intensity |
 | **11** | 📍 Location+ | Geofence region enter/exit events |

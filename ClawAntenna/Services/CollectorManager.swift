@@ -23,6 +23,19 @@ final class CollectorManager {
     let noise: NoiseCollector
     let bluetooth: BluetoothCollector
     let nowPlaying: NowPlayingCollector
+    let proximity: ProximityCollector
+    let screenLock: ScreenLockCollector
+    let appearance: AppearanceCollector
+    let cellular: CellularCollector
+    let timezone: TimezoneCollector
+    let memory: MemoryCollector
+    let accelerometer: AccelerometerCollector
+    let photoActivity: PhotoActivityCollector
+    let calendar: CalendarCollector
+    let lowPowerMode: LowPowerModeCollector
+    let uptime: UptimeCollector
+    let lifecycle: AppLifecycleCollector
+    let geofence: GeofenceCollector
     // Health collector requires a HealthKit entitlement that needs Apple approval.
     // Kept in code but excluded from the active collector list for now.
     // let health: HealthCollector
@@ -42,6 +55,19 @@ final class CollectorManager {
         let noise = NoiseCollector(modelContainer: modelContainer)
         let bluetooth = BluetoothCollector(modelContainer: modelContainer)
         let nowPlaying = NowPlayingCollector(modelContainer: modelContainer)
+        let proximity = ProximityCollector(modelContainer: modelContainer)
+        let screenLock = ScreenLockCollector(modelContainer: modelContainer)
+        let appearance = AppearanceCollector(modelContainer: modelContainer)
+        let cellular = CellularCollector(modelContainer: modelContainer)
+        let timezone = TimezoneCollector(modelContainer: modelContainer)
+        let memory = MemoryCollector(modelContainer: modelContainer)
+        let accelerometer = AccelerometerCollector(modelContainer: modelContainer)
+        let photoActivity = PhotoActivityCollector(modelContainer: modelContainer)
+        let calendar = CalendarCollector(modelContainer: modelContainer)
+        let lowPowerMode = LowPowerModeCollector(modelContainer: modelContainer)
+        let uptime = UptimeCollector(modelContainer: modelContainer)
+        let lifecycle = AppLifecycleCollector(modelContainer: modelContainer)
+        let geofence = GeofenceCollector(locationManager: locationManager, modelContainer: modelContainer)
 
         self.location = location
         self.activity = activity
@@ -57,10 +83,25 @@ final class CollectorManager {
         self.noise = noise
         self.bluetooth = bluetooth
         self.nowPlaying = nowPlaying
+        self.proximity = proximity
+        self.screenLock = screenLock
+        self.appearance = appearance
+        self.cellular = cellular
+        self.timezone = timezone
+        self.memory = memory
+        self.accelerometer = accelerometer
+        self.photoActivity = photoActivity
+        self.calendar = calendar
+        self.lowPowerMode = lowPowerMode
+        self.uptime = uptime
+        self.lifecycle = lifecycle
+        self.geofence = geofence
 
         self.collectors = [
             location, activity, pedometer, altimeter, battery, connectivity,
-            visits, compass, thermal, brightness, storage, noise, bluetooth, nowPlaying
+            visits, compass, thermal, brightness, storage, noise, bluetooth, nowPlaying,
+            proximity, screenLock, appearance, cellular, timezone, memory,
+            accelerometer, photoActivity, calendar, lowPowerMode, uptime, lifecycle, geofence
         ]
     }
 

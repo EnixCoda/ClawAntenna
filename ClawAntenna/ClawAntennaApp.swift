@@ -21,7 +21,7 @@ struct ClawAntennaApp: App {
                 AltimeterRecord.self,
                 BatteryRecord.self,
                 ConnectivityRecord.self,
-                HealthRecord.self, // kept for SwiftData schema even though collector is disabled
+                HealthRecord.self,
                 VisitRecord.self,
                 CompassRecord.self,
                 ThermalRecord.self,
@@ -29,7 +29,20 @@ struct ClawAntennaApp: App {
                 StorageRecord.self,
                 NoiseRecord.self,
                 BluetoothRecord.self,
-                NowPlayingRecord.self
+                NowPlayingRecord.self,
+                ProximityRecord.self,
+                ScreenLockRecord.self,
+                AppearanceRecord.self,
+                CellularRecord.self,
+                TimezoneRecord.self,
+                MemoryRecord.self,
+                AccelerometerRecord.self,
+                PhotoActivityRecord.self,
+                CalendarRecord.self,
+                LowPowerRecord.self,
+                UptimeRecord.self,
+                AppLifecycleRecord.self,
+                GeofenceRecord.self
             )
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")

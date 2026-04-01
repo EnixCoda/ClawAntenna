@@ -83,49 +83,47 @@ OpenClaw can query ClawAntenna's Supabase tables — giving it full SQL access t
 
 ## 📡 Data Sources
 
-### Active Collectors
+### Active Collectors — 27 ✅
 
-| | Collector | Framework | What it captures | Status |
-|:---:|-----------|-----------|------------------|:------:|
-| 📍 | **Location** | CoreLocation | GPS coordinates, altitude, speed, accuracy | ✅ |
-| 🚶 | **Activity** | CoreMotion | Stationary · Walking · Running · Cycling · Driving | ✅ |
-| 👟 | **Pedometer** | CoreMotion | Steps, distance, floors climbed, cadence | ✅ |
-| 🌡️ | **Altimeter** | CoreMotion | Barometric pressure, relative altitude | ✅ |
-| 🔋 | **Battery** | UIKit | Battery level and charging state | ✅ |
-| 📶 | **Connectivity** | Network | Wi-Fi / Cellular / None, connection quality | ✅ |
-| 📍 | **Visits** | CoreLocation | Automatic place arrival / departure detection | ✅ |
-| 🧭 | **Compass** | CoreLocation | Heading direction, magnetic / true north | ✅ |
-| 🌡️ | **Thermal** | ProcessInfo | Device thermal state (nominal → critical) | ✅ |
-| 🔆 | **Brightness** | UIKit | Screen brightness level (0–100 %) | ✅ |
-| 💾 | **Storage** | FileManager | Available / total disk space | ✅ |
-| 🔊 | **Noise** | AVAudioEngine | Ambient sound level in decibels | ✅ |
-| 📡 | **Bluetooth** | CoreBluetooth | Nearby BLE peripherals (name, signal strength) | ✅ |
-| 🎵 | **Now Playing** | MediaPlayer | Currently playing track, artist, album | ✅ |
+| | Collector | Framework | What it captures |
+|:---:|-----------|-----------|------------------|
+| 📍 | **Location** | CoreLocation | GPS coordinates, altitude, speed, accuracy |
+| 🚶 | **Activity** | CoreMotion | Stationary · Walking · Running · Cycling · Driving |
+| 👟 | **Pedometer** | CoreMotion | Steps, distance, floors climbed, cadence |
+| 🌡️ | **Altimeter** | CoreMotion | Barometric pressure, relative altitude |
+| 🔋 | **Battery** | UIKit | Battery level and charging state |
+| 📶 | **Connectivity** | Network | Wi-Fi / Cellular / None, connection quality |
+| 📍 | **Visits** | CoreLocation | Automatic place arrival / departure detection |
+| 🧭 | **Compass** | CoreLocation | Heading direction, magnetic / true north |
+| 🌡️ | **Thermal** | ProcessInfo | Device thermal state (nominal → critical) |
+| 🔆 | **Brightness** | UIKit | Screen brightness level (0–100 %) |
+| 💾 | **Storage** | FileManager | Available / total disk space |
+| 🔊 | **Noise** | AVAudioEngine | Ambient sound level in decibels |
+| 📡 | **Bluetooth** | CoreBluetooth | Nearby BLE peripherals (name, signal strength) |
+| 🎵 | **Now Playing** | MediaPlayer | Currently playing track, artist, album |
+| 👋 | **Proximity** | UIKit | Phone near face / in pocket |
+| 🔒 | **Screen Lock** | Darwin | Lock / unlock events |
+| 🌙 | **Appearance** | UIKit | Dark mode / light mode changes |
+| 📶 | **Cellular** | CoreTelephony | Carrier name, radio type (5G / LTE / 3G) |
+| 🌍 | **Timezone** | Foundation | Timezone changes (travel detection) |
+| 🧠 | **Memory** | os | Available RAM / memory pressure |
+| 📐 | **Accelerometer** | CoreMotion | Raw motion intensity, shake detection |
+| 📸 | **Photo Activity** | PhotoKit | Photo count, video count |
+| 📅 | **Calendar** | EventKit | Event count, all-day event count |
+| ⚡ | **Low Power Mode** | ProcessInfo | Low power mode on / off transitions |
+| ⏱️ | **Uptime** | ProcessInfo | Device uptime / last reboot |
+| 📲 | **App Lifecycle** | UIKit | Foreground / background transitions (phone pickups) |
+| 📍 | **Geofence** | CoreLocation | Region enter / exit events |
 
-### Planned Collectors
+### Entitlement-Blocked Collectors
 
-| | Collector | Framework | What it captures | Permission |
-|:---:|-----------|-----------|------------------|:----------:|
-| 👋 | **Proximity** | UIKit | Phone near face / in pocket | None |
-| 🔒 | **Screen Lock** | Darwin | Lock / unlock events | None |
-| 🌙 | **Appearance** | UIKit | Dark mode / light mode changes | None |
-| 📶 | **Cellular** | CoreTelephony | Carrier name, radio type (5G/LTE/3G) | None |
-| 🌍 | **Timezone** | Foundation | Timezone changes (travel detection) | None |
-| 🧠 | **Memory** | os | Available RAM / memory pressure | None |
-| 📐 | **Accelerometer** | CoreMotion | Raw motion intensity, shake detection | Motion ¹ |
-| 📸 | **Photo Activity** | PhotoKit | Photo count, last capture timestamp | Photos |
-| 📅 | **Calendar** | EventKit | Free/busy status, event count | Calendar |
-| ⚡ | **Low Power Mode** | ProcessInfo | Low power mode on/off transitions | None |
-| ⏱️ | **Uptime** | ProcessInfo | Device uptime / last reboot | None |
-| 📲 | **App Lifecycle** | UIKit | Foreground/background transitions (phone pickups) | None |
-| 📍 | **Geofence** | CoreLocation | Region enter/exit events | Location ¹ |
-| 📱 | **NFC Tags** | CoreNFC | NFC tag scanning | NFC ³ |
-| 📶 | **Wi-Fi SSID** | NetworkExtension | Connected Wi-Fi network name | Entitlement ³ |
-| ❤️ | **Health** | HealthKit | Heart rate, energy burned, sleep, workouts | HealthKit ³ |
+These require special entitlements from Apple and are **not** included in the default build:
 
-¹ *Reuses existing permission — no additional prompt.*
-² *Requires a HealthKit entitlement that must be approved by Apple. Code is implemented but disabled by default.*
-³ *Requires a special entitlement from Apple.*
+| | Collector | Framework | What it captures | Requirement |
+|:---:|-----------|-----------|------------------|:-----------:|
+| 📱 | **NFC Tags** | CoreNFC | NFC tag scanning | NFC entitlement |
+| 📶 | **Wi-Fi SSID** | NetworkExtension | Connected Wi-Fi network name | Network entitlement |
+| ❤️ | **Health** | HealthKit | Heart rate, energy burned, sleep, workouts | HealthKit entitlement |
 
 Every collector runs independently, can be toggled on/off, and uploads to its own Supabase table.
 
@@ -309,6 +307,119 @@ CREATE TABLE now_playing (
   recorded_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 👋 Proximity sensor
+CREATE TABLE proximity (
+  id UUID PRIMARY KEY,
+  is_near BOOLEAN NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 🔒 Screen lock / unlock
+CREATE TABLE screen_lock (
+  id UUID PRIMARY KEY,
+  is_locked BOOLEAN NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 🌙 Appearance (dark / light mode)
+CREATE TABLE appearance (
+  id UUID PRIMARY KEY,
+  style TEXT NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 📶 Cellular radio info
+CREATE TABLE cellular (
+  id UUID PRIMARY KEY,
+  carrier_name TEXT,
+  radio_type TEXT,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 🌍 Timezone changes
+CREATE TABLE timezone (
+  id UUID PRIMARY KEY,
+  identifier TEXT NOT NULL,
+  abbreviation TEXT,
+  seconds_from_gmt INT NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 🧠 Memory pressure
+CREATE TABLE memory (
+  id UUID PRIMARY KEY,
+  available_bytes BIGINT NOT NULL,
+  total_bytes BIGINT NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 📐 Accelerometer
+CREATE TABLE accelerometer (
+  id UUID PRIMARY KEY,
+  x DOUBLE PRECISION NOT NULL,
+  y DOUBLE PRECISION NOT NULL,
+  z DOUBLE PRECISION NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 📸 Photo activity
+CREATE TABLE photo_activity (
+  id UUID PRIMARY KEY,
+  photo_count INT NOT NULL,
+  video_count INT NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 📅 Calendar
+CREATE TABLE calendar (
+  id UUID PRIMARY KEY,
+  event_count INT NOT NULL,
+  all_day_count INT NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ⚡ Low power mode
+CREATE TABLE low_power (
+  id UUID PRIMARY KEY,
+  is_enabled BOOLEAN NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ⏱️ Device uptime
+CREATE TABLE uptime (
+  id UUID PRIMARY KEY,
+  uptime_seconds DOUBLE PRECISION NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 📲 App lifecycle
+CREATE TABLE app_lifecycle (
+  id UUID PRIMARY KEY,
+  event TEXT NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 📍 Geofence regions
+CREATE TABLE geofence (
+  id UUID PRIMARY KEY,
+  region_identifier TEXT NOT NULL,
+  event TEXT NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 ```
 
 Then enable **Row Level Security (RLS)** on each table:
@@ -329,6 +440,19 @@ ALTER TABLE storage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE noise ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bluetooth ENABLE ROW LEVEL SECURITY;
 ALTER TABLE now_playing ENABLE ROW LEVEL SECURITY;
+ALTER TABLE proximity ENABLE ROW LEVEL SECURITY;
+ALTER TABLE screen_lock ENABLE ROW LEVEL SECURITY;
+ALTER TABLE appearance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cellular ENABLE ROW LEVEL SECURITY;
+ALTER TABLE timezone ENABLE ROW LEVEL SECURITY;
+ALTER TABLE memory ENABLE ROW LEVEL SECURITY;
+ALTER TABLE accelerometer ENABLE ROW LEVEL SECURITY;
+ALTER TABLE photo_activity ENABLE ROW LEVEL SECURITY;
+ALTER TABLE calendar ENABLE ROW LEVEL SECURITY;
+ALTER TABLE low_power ENABLE ROW LEVEL SECURITY;
+ALTER TABLE uptime ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_lifecycle ENABLE ROW LEVEL SECURITY;
+ALTER TABLE geofence ENABLE ROW LEVEL SECURITY;
 ```
 
 </details>
@@ -389,6 +513,10 @@ Headers:
 > *"How loud was it at last night's dinner?"*
 > *"How much time did I spend at the office this week?"*
 > *"What song was playing when I was at the park?"*
+> *"How many times did I pick up my phone today?"*
+> *"Was I in dark mode or light mode yesterday evening?"*
+> *"What timezone was I in last Friday?"*
+> *"How many photos did I take this weekend?"*
 
 OpenClaw queries the Supabase tables ClawAntenna populates and answers with your real data — no manual logging needed.
 
@@ -420,12 +548,14 @@ Failed uploads are retried up to 5 times with exponential backoff tracking. Noth
 
 ```mermaid
 flowchart TB
-    subgraph Collectors["📱 Collectors (14 active + 11 planned)"]
+    subgraph Collectors["📱 27 Active Collectors"]
         direction LR
-        L["📍 Location\n& Visits"]
-        M["🚶 Motion\n& Pedometer"]
-        D["🔋 Device\nState"]
-        E["🔊 Environ-\nment"]
+        L["📍 Location\nVisits · Compass\nGeofence"]
+        M["🚶 Motion\nPedometer\nAccelerometer"]
+        D["🔋 Device\nBattery · Thermal\nStorage · Memory"]
+        E["🔊 Environ-\nment · BLE\nNoise"]
+        S["⚡ System\nLifecycle · Lock\nUptime · Power"]
+        C["📶 Context\nCellular · TZ\nAppearance"]
     end
 
     subgraph Local["💾 Local Storage"]
@@ -434,10 +564,10 @@ flowchart TB
 
     subgraph Cloud["☁️ Supabase"]
         API["REST API\n(PostgREST)"]
-        DB["PostgreSQL\n25 tables"]
+        DB["PostgreSQL\n28 tables"]
     end
 
-    L & M & D & E --> SD
+    L & M & D & E & S & C --> SD
     SD -->|"Batch POST\nRetry · Idempotent"| API
     API --> DB
 ```
@@ -461,11 +591,11 @@ Records that fail to upload are retried automatically (up to 5 attempts). UUID p
 | **5** | ✅ Device State | Thermal state, screen brightness, storage usage |
 | **6** | ✅ Environment | Ambient noise level metering, Bluetooth peripheral scanning |
 | **7** | ✅ Media | Now-playing track detection |
-| **8** | 📱 Device Awareness | Proximity, screen lock/unlock, dark mode, cellular radio info |
-| **9** | ⚡ System State | Low power mode, device uptime, app lifecycle (phone pickup frequency) |
-| **10** | 🌍 Context | Timezone changes, memory pressure, accelerometer motion intensity |
-| **11** | 📍 Location+ | Geofence region enter/exit events |
-| **12** | 📸 Personal Data | Photo activity, calendar free/busy (new permissions) |
+| **8** | ✅ Device Awareness | Proximity, screen lock/unlock, dark mode, cellular radio info |
+| **9** | ✅ System State | Low power mode, device uptime, app lifecycle (phone pickup frequency) |
+| **10** | ✅ Context | Timezone changes, memory pressure, accelerometer motion intensity |
+| **11** | ✅ Location+ | Geofence region enter/exit events |
+| **12** | ✅ Personal Data | Photo activity, calendar event counts (new permissions) |
 | **13** | 🔒 Entitlements | NFC tag scanning, Wi-Fi SSID, HealthKit — require Apple-approved entitlements |
 | **14** | 🧠 Intelligence | Automatic trip detection, data export (CSV/JSON), dashboard charts & visualizations |
 
@@ -485,7 +615,7 @@ git push origin feat/awesome-collector
 ```
 
 **Ideas for contributions:**
-- 🆕 New collector (see [Planned Collectors](#planned-collectors) above)
+- 🆕 New collector (see [Entitlement-Blocked Collectors](#entitlement-blocked-collectors) above)
 - 🦞 OpenClaw skill for querying ClawAntenna data in natural language
 - 📊 Grafana dashboard templates for the Supabase data
 - 🧪 Unit tests for upload retry logic

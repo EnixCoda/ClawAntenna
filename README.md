@@ -135,7 +135,7 @@ Every collector runs independently, can be toggled on/off, and uploads to its ow
 2. Click **New project**, pick a name and region, set a database password
 3. Once the project is ready, note down:
    - **Project URL** — looks like `https://abcdefg.supabase.co`, at project homepage
-   - **Secret key** — the long `sb_secret_...`, at **Project Settings → API Keys → Secret keys**
+   - **Secret key** (also called **Service role key**) — the long `sb_secret_...`, at **Project Settings → API Keys**
 
 ### 2. Create the database tables
 

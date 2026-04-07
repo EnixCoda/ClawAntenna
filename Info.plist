@@ -2,11 +2,19 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-<key>UIBackgroundModes</key>
-<array>
-<string>location</string>
-</array>
-<key>NSMotionUsageDescription</key>
-<string>ClawAntenna uses motion data to detect your activity type, count steps, and measure altitude changes.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+	<key>NSMotionUsageDescription</key>
+	<string>ClawAntenna uses motion data to detect your activity type, count steps, and measure altitude changes.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ClawAntenna measures ambient noise levels in decibels. No audio is recorded or stored.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ClawAntenna counts your photos and videos to track library growth over time. No photos are read or uploaded.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>ClawAntenna counts today's calendar events to track how busy your schedule is. No event details are read or uploaded.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>ClawAntenna detects the currently playing track title, artist, and album. No media files are accessed.</string>
 </dict>
 </plist>

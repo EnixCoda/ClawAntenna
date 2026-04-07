@@ -3,15 +3,10 @@ import SwiftData
 
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \LocationRecord.recordedAt, order: .reverse) private var allRecords: [LocationRecord]
 
     var collectorManager: CollectorManager
     var uploadService: UploadService
     var settings: AppSettings
-
-    private var pendingCount: Int {
-        allRecords.filter { $0.status == .pending || $0.status == .failed }.count
-    }
 
     var body: some View {
         NavigationStack {
@@ -64,7 +59,7 @@ struct DashboardView: View {
             .navigationTitle("ClawAntenna")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    if pendingCount > 0 {
+                    if uploadService.totalPendingCount > 0 {
                         Button {
                             Task {
                                 await uploadService.uploadPendingRecords(modelContext: modelContext)
@@ -77,7 +72,7 @@ struct DashboardView: View {
                                 } else {
                                     Image(systemName: "arrow.up.circle")
                                 }
-                                Text("\(pendingCount)")
+                                Text("\(uploadService.totalPendingCount)")
                                     .font(.caption.weight(.medium))
                             }
                         }
@@ -96,10 +91,11 @@ struct DashboardView: View {
                     }
                 }
             }
+            .onAppear {
+                uploadService.refreshCounts(modelContext: modelContext)
+            }
         }
     }
-
-
 }
 
 /// A single row displaying a collector's name and status.

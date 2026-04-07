@@ -10,9 +10,54 @@ final class UploadService {
 
     var isUploading = false
     var lastError: String?
+    var totalPendingCount = 0
+    var totalUploadedCount = 0
 
     init(settings: AppSettings) {
         self.settings = settings
+    }
+
+    /// Recomputes aggregate pending / uploaded counts across all record types.
+    @MainActor
+    func refreshCounts(modelContext: ModelContext) {
+        var pending = 0
+        var uploaded = 0
+
+        func count<T: PersistentModel & Uploadable>(_ type: T.Type) {
+            let descriptor = FetchDescriptor<T>()
+            guard let all = try? modelContext.fetch(descriptor) else { return }
+            for r in all {
+                if r.uploadStatus == UploadStatus.uploaded.rawValue {
+                    uploaded += 1
+                } else if r.uploadStatus == UploadStatus.pending.rawValue || r.uploadStatus == UploadStatus.failed.rawValue {
+                    pending += 1
+                }
+            }
+        }
+
+        count(LocationRecord.self)
+        count(ActivityRecord.self)
+        count(PedometerRecord.self)
+        count(AltimeterRecord.self)
+        count(BatteryRecord.self)
+        count(ConnectivityRecord.self)
+        count(VisitRecord.self)
+        count(CompassRecord.self)
+        count(ThermalRecord.self)
+        count(NoiseRecord.self)
+        count(NowPlayingRecord.self)
+        count(ProximityRecord.self)
+        count(ScreenLockRecord.self)
+        count(AppearanceRecord.self)
+        count(CellularRecord.self)
+        count(MemoryRecord.self)
+        count(PhotoActivityRecord.self)
+        count(CalendarRecord.self)
+        count(AppLifecycleRecord.self)
+        count(GeofenceRecord.self)
+
+        totalPendingCount = pending
+        totalUploadedCount = uploaded
     }
 
     /// Uploads all pending records across all collector types to Supabase.
@@ -29,7 +74,10 @@ final class UploadService {
         }
 
         isUploading = true
-        defer { isUploading = false }
+        defer {
+            isUploading = false
+            refreshCounts(modelContext: modelContext)
+        }
 
         await uploadBatch(fetchPending(LocationRecord.self, from: modelContext), table: LocationRecord.supabaseTable, modelContext: modelContext)
         await uploadBatch(fetchPending(ActivityRecord.self, from: modelContext), table: ActivityRecord.supabaseTable, modelContext: modelContext)
@@ -37,6 +85,20 @@ final class UploadService {
         await uploadBatch(fetchPending(AltimeterRecord.self, from: modelContext), table: AltimeterRecord.supabaseTable, modelContext: modelContext)
         await uploadBatch(fetchPending(BatteryRecord.self, from: modelContext), table: BatteryRecord.supabaseTable, modelContext: modelContext)
         await uploadBatch(fetchPending(ConnectivityRecord.self, from: modelContext), table: ConnectivityRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(VisitRecord.self, from: modelContext), table: VisitRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(CompassRecord.self, from: modelContext), table: CompassRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(ThermalRecord.self, from: modelContext), table: ThermalRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(NoiseRecord.self, from: modelContext), table: NoiseRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(NowPlayingRecord.self, from: modelContext), table: NowPlayingRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(ProximityRecord.self, from: modelContext), table: ProximityRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(ScreenLockRecord.self, from: modelContext), table: ScreenLockRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(AppearanceRecord.self, from: modelContext), table: AppearanceRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(CellularRecord.self, from: modelContext), table: CellularRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(MemoryRecord.self, from: modelContext), table: MemoryRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(PhotoActivityRecord.self, from: modelContext), table: PhotoActivityRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(CalendarRecord.self, from: modelContext), table: CalendarRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(AppLifecycleRecord.self, from: modelContext), table: AppLifecycleRecord.supabaseTable, modelContext: modelContext)
+        await uploadBatch(fetchPending(GeofenceRecord.self, from: modelContext), table: GeofenceRecord.supabaseTable, modelContext: modelContext)
         // HealthRecord upload disabled — HealthKit entitlement requires Apple approval
         // await uploadBatch(fetchPending(HealthRecord.self, from: modelContext), table: HealthRecord.supabaseTable, modelContext: modelContext)
     }
@@ -44,8 +106,7 @@ final class UploadService {
     // MARK: - Private
 
     private func fetchPending<T: PersistentModel & Uploadable>(_ type: T.Type, from modelContext: ModelContext) -> [T] {
-        var descriptor = FetchDescriptor<T>()
-        descriptor.fetchLimit = 200
+        let descriptor = FetchDescriptor<T>()
         guard let all = try? modelContext.fetch(descriptor) else { return [] }
         return all.filter {
             ($0.uploadStatus == UploadStatus.pending.rawValue || $0.uploadStatus == UploadStatus.failed.rawValue)

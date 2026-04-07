@@ -41,10 +41,7 @@ struct CollectorDetailView: View {
             // MARK: - Toggle
             Section {
                 Toggle(isOn: isEnabled) {
-                    Label(
-                        collector.isRunning ? "Running" : "Stopped",
-                        systemImage: collector.isRunning ? "bolt.fill" : "bolt.slash"
-                    )
+                    Text("Enable Collection")
                 }
             }
 

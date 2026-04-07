@@ -15,6 +15,13 @@ final class LocationManager {
 
     var onLocationUpdate: ((CLLocation) -> Void)?
     var onAuthorizationChange: (() -> Void)?
+    var onVisit: ((CLVisit) -> Void)?
+    var onHeading: ((CLHeading) -> Void)?
+    var onRegionEnter: ((CLRegion) -> Void)?
+    var onRegionExit: ((CLRegion) -> Void)?
+
+    /// Direct access to the underlying CLLocationManager for visit/heading APIs.
+    var clManager: CLLocationManager { manager! }
 
     /// Must be called once from the main thread after the view appears.
     func setup() {
@@ -34,6 +41,18 @@ final class LocationManager {
             self?.authorizationStatus = status
             self?.logger.info("Authorization changed to: \(status.rawValue)")
             self?.onAuthorizationChange?()
+        }
+        del.onVisit = { [weak self] visit in
+            self?.onVisit?(visit)
+        }
+        del.onHeading = { [weak self] heading in
+            self?.onHeading?(heading)
+        }
+        del.onRegionEnter = { [weak self] region in
+            self?.onRegionEnter?(region)
+        }
+        del.onRegionExit = { [weak self] region in
+            self?.onRegionExit?(region)
         }
 
         self.delegate = del
@@ -116,6 +135,10 @@ private class LocationDelegate: NSObject, CLLocationManagerDelegate {
     var onUpdate: ((CLLocation) -> Void)?
     var onError: ((Error) -> Void)?
     var onAuthChange: ((CLAuthorizationStatus) -> Void)?
+    var onVisit: ((CLVisit) -> Void)?
+    var onHeading: ((CLHeading) -> Void)?
+    var onRegionEnter: ((CLRegion) -> Void)?
+    var onRegionExit: ((CLRegion) -> Void)?
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
@@ -128,5 +151,21 @@ private class LocationDelegate: NSObject, CLLocationManagerDelegate {
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         onAuthChange?(manager.authorizationStatus)
+    }
+
+    func locationManager(_ manager: CLLocationManager, didVisit visit: CLVisit) {
+        onVisit?(visit)
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+        onHeading?(newHeading)
+    }
+
+    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        onRegionEnter?(region)
+    }
+
+    func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+        onRegionExit?(region)
     }
 }
